@@ -102,9 +102,8 @@ gst_myfilter_class_init (GstMyFilterClass * klass)
         gst_caps_from_string (VIDEO_SINK_CAPS)));
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS(klass),
-      "FIXME Long name", "Generic", "FIXME Description",
-      "FIXME <fixme@example.com>");
-
+      "Cuda Video Filter", "Filter/Effect/Video", "Applies CUDA-based filtering to video frames",
+      "Baptiste Bellamy <baptiste.bellamy@epita.fr>, Gaspard Saliou <gaspard.saliou@epita.fr>,Gautier Gally <gautier.gally@epita.fr>,Eithan Nakache <eithan.nakache@epita.fr>");
 
   gobject_class->set_property = gst_myfilter_set_property;
   gobject_class->get_property = gst_myfilter_get_property;
@@ -257,37 +256,37 @@ gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
   return GST_FLOW_OK;
 }
 
-// static gboolean
-// plugin_init (GstPlugin * plugin)
-// {
-// 
-//   /* FIXME Remember to set the rank if it's an element that is meant
-//      to be autoplugged by decodebin. */
-//   return gst_element_register (plugin, "myfilter", GST_RANK_NONE,
-//       GST_TYPE_MYFILTER);
-// }
+static gboolean
+plugin_init (GstPlugin * plugin)
+{
+
+  /* FIXME Remember to set the rank if it's an element that is meant
+     to be autoplugged by decodebin. */
+  return gst_element_register (plugin, "myfilter", GST_RANK_NONE,
+      GST_TYPE_MYFILTER);
+}
 
 /* FIXME: these are normally defined by the GStreamer build system.
    If you are creating an element to be included in gst-plugins-*,
    remove these, as they're always defined.  Otherwise, edit as
    appropriate for your external plugin package. */
 
-// #ifndef VERSION
-// #define VERSION "0.0.FIXME"
-// #endif
-// #ifndef PACKAGE
-// #define PACKAGE "FIXME_package"
-// #endif
-// #ifndef PACKAGE_NAME
-// #define PACKAGE_NAME "FIXME_package_name"
-// #endif
-// #ifndef GST_PACKAGE_ORIGIN
-// #define GST_PACKAGE_ORIGIN "http://FIXME.org/"
-// #endif
+#ifndef VERSION
+#define VERSION "1.0"
+#endif
+#ifndef PACKAGE
+#define PACKAGE "cuda_video_filter_package"
+#endif
+#ifndef PACKAGE_NAME
+#define PACKAGE_NAME "Cuda Video Filter"
+#endif
+#ifndef GST_PACKAGE_ORIGIN
+#define GST_PACKAGE_ORIGIN "http://frameflow.com/"
+#endif
 
-//GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-//    GST_VERSION_MINOR,
-//    myfilter,
-//    "FIXME plugin description",
-//    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+   GST_VERSION_MINOR,
+   myfilter,
+   "CUDA-based video filter",
+   plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
 
