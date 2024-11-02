@@ -19,20 +19,15 @@ void compute_cpp(ImageView<rgb8> in);
 void compute_cu(ImageView<rgb8> in);
 
 
-struct BackgroundPixel {
-    ImageView<rgb8> bg_value;
-    ImageView<rgb8> candidate_value;
-    int time_since_match = 0;
-};
-
-BackgroundPixel background_model;
+static ImageView<rgb8> bg_value;
+static ImageView<rgb8> candidate_value;
+static int time_since_match;
 
 void init_background_model(ImageView<rgb8> in)
 {
-    background_model = malloc(sizeof(BackgroundPixel));
-    background_model.bg_value = memcpy(in.buffer, sizeof(ImageView<rgb8>));
-    background_model.candidate_value = memcpy(in.buffer, sizeof(ImageView<rgb8>));
-    background_model.time_since_match = calloc(sizeof(int), 0);
+  memcpy(in.buffer, bg_value, sizeof(long(ImageView<rgb8>)));
+  memcpy(in.buffer, candidate_value, sizeof(long(ImageView<rgb8>)));
+  time_since_match = calloc(sizeof(int), 0);
 }
 
 void RGBtoXYZ(int R, int G, int B, double& X, double& Y, double& Z) {
@@ -79,8 +74,8 @@ bool matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
 
     for (int y = 0; y < img1.height; ++y) {
         for (int x = 0; x < img1.width; ++x) {
-            unsigned char* pixel1 = img1.buffer + y * img1.stride + x * 3;
-            unsigned char* pixel2 = img2.buffer + y * img2.stride + x * 3;
+            char* pixel1 = img1.buffer + y * img1.stride + x * 3;
+            char* pixel2 = img2.buffer + y * img2.stride + x * 3;
 
             double X1, Y1, Z1, L1, a1, b1;
             double X2, Y2, Z2, L2, a2, b2;
@@ -100,35 +95,41 @@ bool matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
     return averageDistance;
 }
 
-void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
+void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
   for (int y; y < img1.height; y++){
     for (int x; x < img1.width; x++){
       int index = y * img1.width + x * 3;
-      img1.buffer[index] = (img1.buffer[index] + img2.buffer[index]) / 2;
+      rgb8 pixel1 = img1.buffer[index];
+      rgb8 pixel2 = img2.buffer[index];
+
+      img1.buffer[index] = (pixel1.r + pixel2.r) / 2;
+      img1.buffer[index + 1] = (pixel1.g + pixel2.g) / 2;
+      img1.buffer[index + 2] = (pixel1.b + pixel2.b) / 2;
     }
   }
 }
 
 int background_estimation_process(ImageView<rgb8> in){
-  double match_distance = matchImagesLAB(background_model.bg_value, current_frame, 25)
+  double match_distance = matchImagesLAB(bg_value, in, 25)
   if (match_distance < 25){
-    average(&background_model.bg_value, &current_frame);
-    background_model.time_since_match = 0;
+    average(&bg_value, in);
+    time_since_match = 0;
   }
   else{
-    if (background_model.time_since_match == 0){
-      background_model.candidate_value = memcpy(current_frame, in.width * in.height * sizeof(rgb8));
-      background_model.time_since_match++;
+    if (time_since_match == 0){
+      candidate_value = memcpy(in, in.width * in.height * sizeof(rgb8));
+      time_since_match++;
     }
-    else if (background_model.time_since_match < 100){
-      average(&background_model.candidates, &background_model.current_frame);
-      background_model.time_since_match++;
+    else if (time_since_match < 100){
+      average(&candidates, in);
+      time_since_match++;
     }
     else{
-      ImageView& tmp = memcpy(background_model.candidates, sizeof(ImageView<rgb8>));
-      background_model.candidate_value = memcpy(background_model.bg_value, sizeof(ImageView<rgb8>));
-      background_model.bg_value = memcpy(tmp, sizeof(ImageView<rgb8>));
-      background_model.time_since_match = 0;
+      ImageView& tmp;
+      memcpy(candidates, tmp, sizeof(ImageView<rgb8>));
+      memcpy(bg_value, candidate_value, sizeof(ImageView<rgb8>));
+      memcpy(tmp, bg_value, sizeof(ImageView<rgb8>));
+      time_since_match = 0;
     }
   }
   std::cout << "Background match distance: " << match_distance << std::endl;
@@ -138,12 +139,12 @@ int background_estimation_process(ImageView<rgb8> in){
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-  if (background_model.empty())
+  if (background_model == NULL)
   {
-    init_background_model(in)
+    init_background_model(in);
   }
   else{
-    background_estimation_process(in)
+    background_estimation_process(in);
 
   }
 
