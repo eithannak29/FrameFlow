@@ -9,6 +9,7 @@
 #include <iostream>
 #include <algorithm>
 
+#define SQR(x) ((x)*(x))
 
 /// Your cpp version of the algorithm
 /// This function is called by cpt_process_frame for each frame
@@ -64,7 +65,8 @@ void XYZtoLAB(double X, double Y, double Z, double& L, double& a, double& b) {
 }
 
 double LABDistance(double L1, double a1, double b1, double L2, double a2, double b2) {
-    return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
+    //return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
+    return sqrt(SQR(rgb_a.r - rgb_b.r) + SQR(rgb_a.g - rgb_b.g) + SQR(rgb_a.b - rgb_b.b));
 }
 
 double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
@@ -99,6 +101,34 @@ double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
     return averageDistance;
 }
 
+double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
+    if (img1.width != img2.width || img1.height != img2.height)
+        return false;  // Retourner une valeur indicative d'erreur, par exemple, -1.
+
+    double totalDistance = 0;
+    int numPixels = 0;
+
+    for (int y = 0; y < img1.height; ++y) {
+        for (int x = 0; x < img1.width; ++x) {
+            rgb8* pixel1 = img1.buffer + y * (img1.stride / sizeof(rgb8)) + x;
+            rgb8* pixel2 = img2.buffer + y * (img2.stride / sizeof(rgb8)) + x;
+
+            // Calculer la distance Euclidienne entre les composantes RGB
+            int dr = pixel1->r - pixel2->r;
+            int dg = pixel1->g - pixel2->g;
+            int db = pixel1->b - pixel2->b;
+            double distance = std::sqrt(dr * dr + dg * dg + db * db);
+            
+            totalDistance += distance;
+            numPixels++;
+        }
+    }
+
+    double averageDistance = totalDistance / numPixels;
+    return averageDistance;
+}
+
+
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
   for (int y; y < img1.height; y++){
     for (int x; x < img1.width; x++){
@@ -114,7 +144,8 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
 }
 
 int background_estimation_process(ImageView<rgb8> in){
-  double match_distance = matchImagesLAB(bg_value, in);
+  double match_distance = matchImagesRGB(bg_value, in) //matchImagesLAB(bg_value, in);
+
   if (match_distance < 25){
     average(bg_value, in);
     time_since_match = 0;
