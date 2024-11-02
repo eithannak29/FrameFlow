@@ -27,10 +27,9 @@ static bool initialized = false;
 
 void init_background_model(ImageView<rgb8> in)
 {
-  memcpy(&bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
-  memcpy(&candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
+  memcpy(&bg_value, &in, sizeof(long(ImageView<rgb8>)));
+  memcpy(&candidate_value, &in, sizeof(long(ImageView<rgb8>)));
   time_since_match = 0;
-
 }
 
 void RGBtoXYZ(uint8_t R, uint8_t G, uint8_t B, double& X, double& Y, double& Z) {
@@ -130,8 +129,8 @@ double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
 
 
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
-  for (int y; y < img1.height; y++){
-    for (int x; x < img1.width; x++){
+  for (int y=0; y < img1.height; y++){
+    for (int x=0; x < img1.width; x++){
       int index = y * img1.width + x * 3;
       rgb8 pixel1 = img1.buffer[index];
       rgb8 pixel2 = img2.buffer[index];
