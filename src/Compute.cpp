@@ -18,16 +18,16 @@ void compute_cpp(ImageView<rgb8> in);
 /// This function is called by cpt_process_frame for each frame
 void compute_cu(ImageView<rgb8> in);
 
-
 static ImageView<rgb8> bg_value;
 static ImageView<rgb8> candidate_value;
 static int time_since_match;
+static bool initialized = false;
 
 void init_background_model(ImageView<rgb8> in)
 {
-  memcpy(in.buffer, bg_value, sizeof(long(ImageView<rgb8>)));
-  memcpy(in.buffer, candidate_value, sizeof(long(ImageView<rgb8>)));
-  time_since_match = calloc(sizeof(int), 0);
+  memcpy(bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
+  memcpy(candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
+  time_since_match = calloc(1, sizeof(int))
 }
 
 void RGBtoXYZ(int R, int G, int B, double& X, double& Y, double& Z) {
@@ -65,7 +65,7 @@ double LABDistance(double L1, double a1, double b1, double L2, double a2, double
     return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
 }
 
-bool matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
+double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
     if (img1.width != img2.width || img1.height != img2.height)
         return false;
 
@@ -74,8 +74,10 @@ bool matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
 
     for (int y = 0; y < img1.height; ++y) {
         for (int x = 0; x < img1.width; ++x) {
-            char* pixel1 = img1.buffer + y * img1.stride + x * 3;
-            char* pixel2 = img2.buffer + y * img2.stride + x * 3;
+            //char* pixel1 = img1.buffer + y * img1.stride + x * 3;
+            rgb8* pixel1 = img1.buffer + y * (img1.stride / sizeof(rgb8)) + x;
+            //char* pixel2 = img2.buffer + y * img2.stride + x * 3;
+            rgb8* pixel2 = img2.buffer + y * (img2.stride / sizeof(rgb8)) + x;
 
             double X1, Y1, Z1, L1, a1, b1;
             double X2, Y2, Z2, L2, a2, b2;
@@ -102,9 +104,9 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
       rgb8 pixel1 = img1.buffer[index];
       rgb8 pixel2 = img2.buffer[index];
 
-      img1.buffer[index] = (pixel1.r + pixel2.r) / 2;
-      img1.buffer[index + 1] = (pixel1.g + pixel2.g) / 2;
-      img1.buffer[index + 2] = (pixel1.b + pixel2.b) / 2;
+      pixel1.r = (pixel1.r + pixel2.r) / 2;
+      pixel1.g = (pixel1.g + pixel2.g) / 2;
+      pixel1.b = (pixel1.b + pixel2.b) / 2;
     }
   }
 }
@@ -117,7 +119,7 @@ int background_estimation_process(ImageView<rgb8> in){
   }
   else{
     if (time_since_match == 0){
-      candidate_value = memcpy(in, in.width * in.height * sizeof(rgb8));
+      memcpy(candidate_value, in, in.width * in.height * sizeof(rgb8));
       time_since_match++;
     }
     else if (time_since_match < 100){
@@ -125,10 +127,10 @@ int background_estimation_process(ImageView<rgb8> in){
       time_since_match++;
     }
     else{
-      ImageView& tmp;
-      memcpy(candidates, tmp, sizeof(ImageView<rgb8>));
-      memcpy(bg_value, candidate_value, sizeof(ImageView<rgb8>));
-      memcpy(tmp, bg_value, sizeof(ImageView<rgb8>));
+      ImageView<rgb8>& tmp;
+      memcpy(tmp, candidate_value, sizeof(ImageView<rgb8>));
+      memcpy(candidate_value, bg_value, sizeof(ImageView<rgb8>));
+      memcpy(bg_value, tmp, sizeof(ImageView<rgb8>));
       time_since_match = 0;
     }
   }
@@ -139,15 +141,14 @@ int background_estimation_process(ImageView<rgb8> in){
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-  if (background_model == NULL)
+  if (!initialized)
   {
     init_background_model(in);
+    initialized = true;
   }
   else{
     background_estimation_process(in);
-
   }
-
 }
 
 
