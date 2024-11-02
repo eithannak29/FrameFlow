@@ -65,8 +65,8 @@ void XYZtoLAB(double X, double Y, double Z, double& L, double& a, double& b) {
 }
 
 double LABDistance(double L1, double a1, double b1, double L2, double a2, double b2) {
-    //return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
-    return sqrt(SQR(rgb_a.r - rgb_b.r) + SQR(rgb_a.g - rgb_b.g) + SQR(rgb_a.b - rgb_b.b));
+    return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
+    //return sqrt(SQR(rgb_a.r - rgb_b.r) + SQR(rgb_a.g - rgb_b.g) + SQR(rgb_a.b - rgb_b.b));
 }
 
 double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
