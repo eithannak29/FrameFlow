@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 
 /// Your cpp version of the algorithm
@@ -27,7 +28,8 @@ void init_background_model(ImageView<rgb8> in)
 {
   memcpy(&bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
   memcpy(&candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
-  time_since_match = calloc(sizeof(int),  1);
+  time_since_match = 0;
+
 }
 
 void RGBtoXYZ(uint8_t R, uint8_t G, uint8_t B, double& X, double& Y, double& Z) {
@@ -104,9 +106,9 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
       rgb8 pixel1 = img1.buffer[index];
       rgb8 pixel2 = img2.buffer[index];
 
-      pixel1->r = (pixel1->r + pixel2->r) / 2;
-      pixel1->g = (pixel1->g + pixel2->g) / 2;
-      pixel1->b = (pixel1->b + pixel2->b) / 2;
+      pixel1.r = (pixel1.r + pixel2.r) / 2;
+      pixel1.g = (pixel1.g + pixel2.g) / 2;
+      pixel1.b = (pixel1.b + pixel2.b) / 2;
     }
   }
 }
@@ -114,7 +116,7 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
 int background_estimation_process(ImageView<rgb8> in){
   double match_distance = matchImagesLAB(bg_value, in);
   if (match_distance < 25){
-    average(&bg_value, in);
+    average(bg_value, in);
     time_since_match = 0;
   }
   else{
@@ -123,14 +125,11 @@ int background_estimation_process(ImageView<rgb8> in){
       time_since_match++;
     }
     else if (time_since_match < 100){
-      average(&candidate_value, in);
+      average(candidate_value, in);
       time_since_match++;
     }
     else{
-      ImageView<rgb8>& tmp = calloc(1, sizeof(ImageView<rgb8>));
-      memcpy(&tmp, &candidate_value, sizeof(ImageView<rgb8>));
-      memcpy(&candidate_value, &bg_value, sizeof(ImageView<rgb8>));
-      memcpy(&bg_value, &tmp, sizeof(ImageView<rgb8>));
+      std::swap(bg_value, candidate_value);
       time_since_match = 0;
     }
   }
