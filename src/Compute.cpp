@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 
 /// Your cpp version of the algorithm
@@ -24,14 +25,14 @@ struct BackgroundPixel {
     int time_since_match = 0;
 };
 
-BackgroundPixel background_model = nullptr;
+BackgroundPixel background_model;
 
 void init_background_model(ImageView<rgb8> in)
 {
-    background_model = calloc(sizeof(BackgroundPixel));
-    background_model.bg_value = memcopy(in.buffer, sizeof(ImageView<rgb8>));
-    background_model.candidate_value = memcopy(in.buffer, sizeof(ImageView<rgb8>));
-    background_model.time_since_match = calloc(sizeof(int));
+    background_model = malloc(sizeof(BackgroundPixel));
+    background_model.bg_value = memcpy(in.buffer, sizeof(ImageView<rgb8>));
+    background_model.candidate_value = memcpy(in.buffer, sizeof(ImageView<rgb8>));
+    background_model.time_since_match = calloc(sizeof(int), 0);
 }
 
 void RGBtoXYZ(int R, int G, int B, double& X, double& Y, double& Z) {
@@ -69,7 +70,7 @@ double LABDistance(double L1, double a1, double b1, double L2, double a2, double
     return std::sqrt((L2 - L1) * (L2 - L1) + (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1));
 }
 
-bool matchImagesLAB(ImageView& img1, ImageView& img2, double threshold) {
+bool matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
     if (img1.width != img2.width || img1.height != img2.height)
         return false;
 
@@ -99,7 +100,7 @@ bool matchImagesLAB(ImageView& img1, ImageView& img2, double threshold) {
     return averageDistance;
 }
 
-void average(ImageView& img1, const ImageView& img2) {
+void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
   for (int y; y < img1.height; y++){
     for (int x; x < img1.width; x++){
       int index = y * img1.width + x * 3;
@@ -116,7 +117,7 @@ int background_estimation_process(ImageView<rgb8> in){
   }
   else{
     if (background_model.time_since_match == 0){
-      background_model.candidate_value = memcopy(current_frame, in.width * in.height * sizeof(rgb8));
+      background_model.candidate_value = memcpy(current_frame, in.width * in.height * sizeof(rgb8));
       background_model.time_since_match++;
     }
     else if (background_model.time_since_match < 100){
@@ -124,9 +125,9 @@ int background_estimation_process(ImageView<rgb8> in){
       background_model.time_since_match++;
     }
     else{
-      ImageView& tmp = memcopy(background_model.candidates, sizeof(ImageView<rgb8>));
-      background_model.candidate_value = memcopy(background_model.bg_value, sizeof(ImageView<rgb8>));
-      background_model.bg_value = memcopy(tmp, sizeof(ImageView<rgb8>));
+      ImageView& tmp = memcpy(background_model.candidates, sizeof(ImageView<rgb8>));
+      background_model.candidate_value = memcpy(background_model.bg_value, sizeof(ImageView<rgb8>));
+      background_model.bg_value = memcpy(tmp, sizeof(ImageView<rgb8>));
       background_model.time_since_match = 0;
     }
   }
@@ -134,61 +135,15 @@ int background_estimation_process(ImageView<rgb8> in){
   return match_distance;
 }
 
-void compute_background(){
-    if (!background_model)
-    {
-        
-    }
-
-    // Process each pixel
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int index = y * plane_stride + x * 3; // RGB pixels
-
-            // Current pixel value
-            uint8_t current_value[3] = { pixels[index], pixels[index + 1], pixels[index + 2] };
-            uint8_t *bg_value = &background_values[index];
-            uint8_t *candidate_value = &candidate_values[index];
-            uint32_t *time = &time_since_match[y * width + x];
-
-            // Compute color distance in RGB space (could be approximated as Lab)
-            int distance = abs(current_value[0] - bg_value[0]) 
-                         + abs(current_value[1] - bg_value[1]) 
-                         + abs(current_value[2] - bg_value[2]);
-
-            if (distance < 25) {  // Match found
-                for (int i = 0; i < 3; i++) {
-                    bg_value[i] = (bg_value[i] + current_value[i]) / 2;
-                }
-                *time = 0;  // Reset time since last match
-            } else {  // No match found
-                if (*time == 0) {  // Initialize candidate if time is 0
-                    memcpy(candidate_value, current_value, 3);
-                    (*time)++;
-                } else if (*time < 100) {  // Incrementally average candidate value
-                    for (int i = 0; i < 3; i++) {
-                        candidate_value[i] = (candidate_value[i] + current_value[i]) / 2;
-                    }
-                    (*time)++;
-                } else {  // Swap candidate with background
-                    memcpy(bg_value, candidate_value, 3);
-                    *time = 0;
-                }
-            }
-        }
-    }
-}
-
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
   if (background_model.empty())
   {
-      background_model.resize(in.width * in.height);
-      set_background_value(in);
+    init_background_model(in)
   }
   else{
-      set_candidate_value(in);
+    background_estimation_process(in)
 
   }
 
