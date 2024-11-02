@@ -25,12 +25,12 @@ static bool initialized = false;
 
 void init_background_model(ImageView<rgb8> in)
 {
-  memcpy(bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
-  memcpy(candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
-  time_since_match = calloc(1, sizeof(int))
+  memcpy(&bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
+  memcpy(&candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
+  time_since_match = calloc(1, sizeof(int));
 }
 
-void RGBtoXYZ(int R, int G, int B, double& X, double& Y, double& Z) {
+void RGBtoXYZ(uint8_t R, uint8_t G, uint8_t B, double& X, double& Y, double& Z) {
     // Convertir de [0,255] à [0,1]
     double r = R / 255.0;
     double g = G / 255.0;
@@ -82,9 +82,9 @@ double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
             double X1, Y1, Z1, L1, a1, b1;
             double X2, Y2, Z2, L2, a2, b2;
 
-            RGBtoXYZ(pixel1[0], pixel1[1], pixel1[2], X1, Y1, Z1);
+            RGBtoXYZ(pixel1.r, pixel1.g, pixel1.b, X1, Y1, Z1);
             XYZtoLAB(X1, Y1, Z1, L1, a1, b1);
-            RGBtoXYZ(pixel2[0], pixel2[1], pixel2[2], X2, Y2, Z2);
+            RGBtoXYZ(pixel2.r, pixel2.g, pixel2.b, X2, Y2, Z2);
             XYZtoLAB(X2, Y2, Z2, L2, a2, b2);
 
             double distance = LABDistance(L1, a1, b1, L2, a2, b2);
@@ -112,25 +112,25 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
 }
 
 int background_estimation_process(ImageView<rgb8> in){
-  double match_distance = matchImagesLAB(bg_value, in, 25)
+  double match_distance = matchImagesLAB(bg_value, in);
   if (match_distance < 25){
     average(&bg_value, in);
     time_since_match = 0;
   }
   else{
     if (time_since_match == 0){
-      memcpy(candidate_value, in, in.width * in.height * sizeof(rgb8));
+      memcpy(&candidate_value, &in, in.width * in.height * sizeof(rgb8));
       time_since_match++;
     }
     else if (time_since_match < 100){
-      average(&candidates, in);
+      average(&candidate_value, in);
       time_since_match++;
     }
     else{
-      ImageView<rgb8>& tmp;
-      memcpy(tmp, candidate_value, sizeof(ImageView<rgb8>));
-      memcpy(candidate_value, bg_value, sizeof(ImageView<rgb8>));
-      memcpy(bg_value, tmp, sizeof(ImageView<rgb8>));
+      ImageView<rgb8>& tmp = calloc(1, sizeof(ImageView<rgb8>));
+      memcpy(&tmp, &candidate_value, sizeof(ImageView<rgb8>));
+      memcpy(&candidate_value, &bg_value, sizeof(ImageView<rgb8>));
+      memcpy(&bg_value, &tmp, sizeof(ImageView<rgb8>));
       time_since_match = 0;
     }
   }
