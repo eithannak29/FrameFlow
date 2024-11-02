@@ -27,7 +27,7 @@ void init_background_model(ImageView<rgb8> in)
 {
   memcpy(&bg_value, in.buffer, sizeof(long(ImageView<rgb8>)));
   memcpy(&candidate_value, in.buffer, sizeof(long(ImageView<rgb8>)));
-  time_since_match = calloc(1, sizeof(int));
+  time_since_match = calloc(sizeof(int),  1);
 }
 
 void RGBtoXYZ(uint8_t R, uint8_t G, uint8_t B, double& X, double& Y, double& Z) {
@@ -82,9 +82,9 @@ double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
             double X1, Y1, Z1, L1, a1, b1;
             double X2, Y2, Z2, L2, a2, b2;
 
-            RGBtoXYZ(pixel1.r, pixel1.g, pixel1.b, X1, Y1, Z1);
+            RGBtoXYZ(pixel1->r, pixel1->g, pixel1->b, X1, Y1, Z1);
             XYZtoLAB(X1, Y1, Z1, L1, a1, b1);
-            RGBtoXYZ(pixel2.r, pixel2.g, pixel2.b, X2, Y2, Z2);
+            RGBtoXYZ(pixel2->r, pixel2->g, pixel2->b, X2, Y2, Z2);
             XYZtoLAB(X2, Y2, Z2, L2, a2, b2);
 
             double distance = LABDistance(L1, a1, b1, L2, a2, b2);
@@ -104,9 +104,9 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
       rgb8 pixel1 = img1.buffer[index];
       rgb8 pixel2 = img2.buffer[index];
 
-      pixel1.r = (pixel1.r + pixel2.r) / 2;
-      pixel1.g = (pixel1.g + pixel2.g) / 2;
-      pixel1.b = (pixel1.b + pixel2.b) / 2;
+      pixel1->r = (pixel1->r + pixel2->r) / 2;
+      pixel1->g = (pixel1->g + pixel2->g) / 2;
+      pixel1->b = (pixel1->b + pixel2->b) / 2;
     }
   }
 }
