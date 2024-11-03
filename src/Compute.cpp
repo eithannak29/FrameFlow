@@ -47,12 +47,23 @@ struct Lab {
     double b;
 };
 
-// Fonction pour convertir sRGB vers linéaire RGB
+// Fonction pour convertir sRGB en RGB linéaire
 double sRGBToLinear(double c) {
     if (c <= 0.04045)
         return c / 12.92;
     else
         return std::pow((c + 0.055) / 1.055, 2.4);
+}
+
+// Fonction auxiliaire pour la conversion XYZ -> Lab
+double f_xyz_to_lab(double t) {
+    const double epsilon = 0.008856; // (6/29)^3
+    const double kappa = 903.3;      // (29/3)^3
+
+    if (t > epsilon)
+        return std::cbrt(t); // Racine cubique
+    else
+        return (kappa * t + 16.0) / 116.0;
 }
 
 // Fonction pour convertir RGB en XYZ
@@ -80,21 +91,10 @@ Lab xyzToLab(double X, double Y, double Z) {
     double y = Y / Yr;
     double z = Z / Zr;
 
-    // Constantes pour la transformation
-    const double epsilon = 0.008856; // (6/29)^3
-    const double kappa = 903.3;      // (29/3)^3
-
-    // Fonction auxiliaire f(t)
-    auto f = [](double t) -> double {
-        if (t > epsilon)
-            return std::cbrt(t); // Racine cubique
-        else
-            return (kappa * t + 16.0) / 116.0;
-    };
-
-    double fx = f(x);
-    double fy = f(y);
-    double fz = f(z);
+    // Application de la fonction f(t)
+    double fx = f_xyz_to_lab(x);
+    double fy = f_xyz_to_lab(y);
+    double fz = f_xyz_to_lab(z);
 
     Lab lab;
     lab.L = 116.0 * fy - 16.0;
@@ -154,6 +154,7 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
     double averageDistance = totalDistance / numPixels;
     return averageDistance;
 }
+
 
 double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
     // std::cout << "Enter match computation"<< std::endl;
