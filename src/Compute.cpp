@@ -175,10 +175,12 @@ void compute_cpp(ImageView<rgb8> in)
 {
   if (!initialized)
   {
+    std::cout << "Initialized compute cpp" << std::endl;
     init_background_model(in);
     initialized = true;
   }
   else{
+    std::cout << " bg estimation " << std::endl;
     background_estimation_process(in);
   }
 }
