@@ -27,8 +27,15 @@ static bool initialized = false;
 
 void init_background_model(ImageView<rgb8> in)
 {
-  memcpy(&bg_value, &in, sizeof(long(ImageView<rgb8>)));
-  memcpy(&candidate_value, &in, sizeof(long(ImageView<rgb8>)));
+  bg_value = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+  candidate_value = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+  for (int y=0; y < in.height; y++){
+    for (int x=0; x < in.width; x++){
+      int index = y * in.width + x;
+      bg_value.buffer[index] = in.buffer[index];
+      candidate_value.buffer[index] = in.buffer[index];
+    }
+  }
   time_since_match = 0;
 }
 
