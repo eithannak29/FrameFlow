@@ -101,7 +101,9 @@ double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
 }
 
 double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
+    std::cout << "Enter match computation"<< std::endl;
     if (img1.width != img2.width || img1.height != img2.height)
+        std::cout << "mauvaise dimension d'images "<< std::endl;
         return false;  // Retourner une valeur indicative d'erreur, par exemple, -1.
 
     double totalDistance = 0;
@@ -122,8 +124,9 @@ double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
             numPixels++;
         }
     }
-
+    std::cout << "tatal distance: " << totalDistance << std::endl;
     double averageDistance = totalDistance / numPixels;
+    std::cout << "average distance " << averageDistance << std::endl;
     return averageDistance;
 }
 
