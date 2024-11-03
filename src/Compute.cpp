@@ -47,35 +47,40 @@ struct Lab {
 };
 
 
-Lab rgb2lab(rgb8 rgb) {
+Lab rgbToLab(const rgb8& rgb) {
+    // Conversion simplifiée de RGB à CIE-Lab.
+    // Implémenter une conversion RGB -> XYZ -> Lab complète est complexe, 
+    // donc ceci est une approximation.
+    
     double r = rgb.r / 255.0;
     double g = rgb.g / 255.0;
     double b = rgb.b / 255.0;
 
-    // Convert sRGB to linear RGB
+    // Appliquer une correction gamma
     r = (r > 0.04045) ? std::pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
     g = (g > 0.04045) ? std::pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
     b = (b > 0.04045) ? std::pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
 
-    // Convert linear RGB to CIE XYZ
-    double X = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
-    double Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
-    double Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
+    // Convertir en espace XYZ
+    double X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+    double Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    double Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
 
-    // Convert CIE XYZ to CIE Lab
+    // Normaliser par rapport au blanc de référence
     X /= 0.95047;
-    Y /= 1.0;
+    Y /= 1.00000;
     Z /= 1.08883;
 
-    X = (X > 0.008856) ? std::pow(X, 1.0 / 3.0) : (903.3 * X + 16) / 116.0;
-    Y = (Y > 0.008856) ? std::pow(Y, 1.0 / 3.0) : (903.3 * Y + 16) / 116.0;
-    Z = (Z > 0.008856) ? std::pow(Z, 1.0 / 3.0) : (903.3 * Z + 16) / 116.0;
+    // Convertir en espace Lab
+    X = (X > 0.008856) ? std::cbrt(X) : (7.787 * X) + (16.0 / 116.0);
+    Y = (Y > 0.008856) ? std::cbrt(Y) : (7.787 * Y) + (16.0 / 116.0);
+    Z = (Z > 0.008856) ? std::cbrt(Z) : (7.787 * Z) + (16.0 / 116.0);
 
-    return {
-        116.0 * Y - 16.0,
-        500.0 * (X - Y),
-        200.0 * (Y - Z)
-    };
+    Lab lab;
+    lab.L = (116.0 * Y) - 16.0;
+    lab.a = 500.0 * (X - Y);
+    lab.b = 200.0 * (Y - Z);
+    return lab;
 }
 
 double labDistance(const Lab& lab1, const Lab& lab2) {
