@@ -119,6 +119,41 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
+// Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte thermique)
+rgb8 mapToHeatmap(double value) {
+    value = std::max(0.0, std::min(1.0, value));
+    rgb8 color;
+    if (value <= 0.5) {
+        color.r = 0;
+        color.g = static_cast<uint8_t>(value * 2 * 255);
+        color.b = 255 - color.g;
+    } else {
+        color.r = static_cast<uint8_t>((value - 0.5) * 2 * 255);
+        color.g = 255 - color.r;
+        color.b = 0;
+    }
+    return color;
+}
+
+// Fonction pour générer une carte thermique de mouvement
+void applyMotionHeatmap(const ImageView<rgb8>& bg, ImageView<rgb8>& in) {
+    for (int y = 0; y < in.height; ++y) {
+        for (int x = 0; x < in.width; ++x) {
+            int index = y * in.width + x;
+            rgb8& current_pixel = in.buffer[index];
+            rgb8& bg_pixel = bg.buffer[index];
+
+            Lab current_lab = rgbToLab(current_pixel);
+            Lab bg_lab = rgbToLab(bg_pixel);
+            double deltaE_value = deltaE(current_lab, bg_lab);
+
+            double normalized_value = std::min(deltaE_value / 100.0, 1.0);
+            current_pixel = mapToHeatmap(normalized_value);
+        }
+    }
+}
+
+
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
     if (img1.width != img2.width || img1.height != img2.height) {
@@ -246,6 +281,7 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
+    applyMotionHeatmap(bg_value, in);
   }
 }
 
