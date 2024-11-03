@@ -281,8 +281,8 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
-    applyMotionHeatmap(bg_value, in);    git push origin video2
   }
+  applyMotionHeatmap(bg_value, in);
 }
 
 
