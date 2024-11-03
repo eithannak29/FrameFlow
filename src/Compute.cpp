@@ -213,7 +213,12 @@ int background_estimation_process(ImageView<rgb8> in){
   }
   else{
     if (time_since_match == 0){
-      memcpy(&candidate_value, &in, in.width * in.height * sizeof(rgb8));
+      for (int y=0; y < in.height; y++){
+        for (int x=0; x < in.width; x++){
+          int index = y * in.width + x;
+          candidate_value.buffer[index] = in.buffer[index];
+        }
+      }
       time_since_match++;
     }
     else if (time_since_match < 100){
