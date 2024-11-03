@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <iostream>
 
 #define SQR(x) ((x)*(x))
 
@@ -39,80 +40,114 @@ void init_background_model(ImageView<rgb8> in)
   time_since_match = 0;
 }
 
-
+// Structure pour représenter une couleur en espace Lab
 struct Lab {
     double L;
     double a;
     double b;
 };
 
+// Fonction pour convertir sRGB vers linéaire RGB
+double sRGBToLinear(double c) {
+    if (c <= 0.04045)
+        return c / 12.92;
+    else
+        return std::pow((c + 0.055) / 1.055, 2.4);
+}
 
-Lab rgbToLab(const rgb8& rgb) {
-    // Conversion simplifiée de RGB à CIE-Lab.
-    // Implémenter une conversion RGB -> XYZ -> Lab complète est complexe, 
-    // donc ceci est une approximation.
-    
-    double r = rgb.r / 255.0;
-    double g = rgb.g / 255.0;
-    double b = rgb.b / 255.0;
+// Fonction pour convertir RGB en XYZ
+void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z) {
+    // Normalisation des valeurs RGB entre 0 et 1
+    double r = sRGBToLinear(rgb.r / 255.0);
+    double g = sRGBToLinear(rgb.g / 255.0);
+    double b = sRGBToLinear(rgb.b / 255.0);
 
-    // Appliquer une correction gamma
-    r = (r > 0.04045) ? std::pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-    g = (g > 0.04045) ? std::pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-    b = (b > 0.04045) ? std::pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+    // Matrice de conversion sRGB D65
+    X = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
+    Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+    Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
+}
 
-    // Convertir en espace XYZ
-    double X = r * 0.4124 + g * 0.3576 + b * 0.1805;
-    double Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-    double Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+// Fonction pour convertir XYZ en Lab
+Lab xyzToLab(double X, double Y, double Z) {
+    // Blanc de référence D65
+    const double Xr = 0.95047;
+    const double Yr = 1.00000;
+    const double Zr = 1.08883;
 
-    // Normaliser par rapport au blanc de référence
-    X /= 0.95047;
-    Y /= 1.00000;
-    Z /= 1.08883;
+    // Normalisation par rapport au blanc de référence
+    double x = X / Xr;
+    double y = Y / Yr;
+    double z = Z / Zr;
 
-    // Convertir en espace Lab
-    X = (X > 0.008856) ? std::cbrt(X) : (7.787 * X) + (16.0 / 116.0);
-    Y = (Y > 0.008856) ? std::cbrt(Y) : (7.787 * Y) + (16.0 / 116.0);
-    Z = (Z > 0.008856) ? std::cbrt(Z) : (7.787 * Z) + (16.0 / 116.0);
+    // Constantes pour la transformation
+    const double epsilon = 0.008856; // (6/29)^3
+    const double kappa = 903.3;      // (29/3)^3
+
+    // Fonction auxiliaire f(t)
+    auto f = [](double t) -> double {
+        if (t > epsilon)
+            return std::cbrt(t); // Racine cubique
+        else
+            return (kappa * t + 16.0) / 116.0;
+    };
+
+    double fx = f(x);
+    double fy = f(y);
+    double fz = f(z);
 
     Lab lab;
-    lab.L = (116.0 * Y) - 16.0;
-    lab.a = 500.0 * (X - Y);
-    lab.b = 200.0 * (Y - Z);
+    lab.L = 116.0 * fy - 16.0;
+    lab.a = 500.0 * (fx - fy);
+    lab.b = 200.0 * (fy - fz);
+
     return lab;
 }
 
-double labDistance(const Lab& lab1, const Lab& lab2) {
+// Fonction pour convertir RGB en Lab
+Lab rgbToLab(const rgb8& rgb) {
+    double X, Y, Z;
+    rgbToXyz(rgb, X, Y, Z);
+    return xyzToLab(X, Y, Z);
+}
+
+// Fonction pour calculer la distance ΔE (CIE76) entre deux couleurs Lab
+double deltaE(const Lab& lab1, const Lab& lab2) {
     double dL = lab1.L - lab2.L;
     double da = lab1.a - lab2.a;
     double db = lab1.b - lab2.b;
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-
-double matchImagesLab(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
+// Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
+double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
     if (img1.width != img2.width || img1.height != img2.height) {
-        std::cout << "Error: images dimensions" << std::endl;
+        std::cerr << "Erreur : les dimensions des images ne correspondent pas." << std::endl;
         return -1.0;  // Retourne une valeur indicative d'erreur
     }
-    
-    double totalDistance = 0;
-    int numPixels = 0;
+
+    double totalDistance = 0.0;
+    int numPixels = img1.width * img1.height;
+
+    // Pré-calcul des strides en nombre de pixels
+    int stride1 = img1.stride / sizeof(rgb8);
+    int stride2 = img2.stride / sizeof(rgb8);
 
     for (int y = 0; y < img1.height; ++y) {
+        rgb8* row1 = img1.buffer + y * stride1;
+        rgb8* row2 = img2.buffer + y * stride2;
+
         for (int x = 0; x < img1.width; ++x) {
-            rgb8* pixel1 = img1.buffer + y * (img1.stride / sizeof(rgb8)) + x;
-            rgb8* pixel2 = img2.buffer + y * (img2.stride / sizeof(rgb8)) + x;
+            rgb8& pixel1 = row1[x];
+            rgb8& pixel2 = row2[x];
 
-            // Convertir chaque pixel RGB en Lab
-            Lab lab1 = rgbToLab(*pixel1);
-            Lab lab2 = rgbToLab(*pixel2);
+            // Convertir les pixels RGB en Lab
+            Lab lab1 = rgbToLab(pixel1);
+            Lab lab2 = rgbToLab(pixel2);
 
-            // Calculer la distance Lab (ΔE)
-            double distance = labDistance(lab1, lab2);
+            // Calculer la distance ΔE
+            double distance = deltaE(lab1, lab2);
             totalDistance += distance;
-            numPixels++;
         }
     }
 
@@ -168,7 +203,7 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
 }
 
 int background_estimation_process(ImageView<rgb8> in){
-  double match_distance = matchImagesLab(bg_value, in);//matchImagesLAB(bg_value, in);
+  double match_distance = matchImagesLab(bg_value, in);
 
   if (match_distance < 25){
     average(bg_value, in);
@@ -197,12 +232,12 @@ void compute_cpp(ImageView<rgb8> in)
 {
   if (!initialized)
   {
-    std::cout << "Initialized Background" << std::endl;
+    // std::cout << "Initialized Background" << std::endl;
     init_background_model(in);
     initialized = true;
   }
   else{
-    std::cout << "Background estimation" << std::endl;
+    // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
   }
 }
