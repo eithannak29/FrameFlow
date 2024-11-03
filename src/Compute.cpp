@@ -108,12 +108,12 @@ double matchImagesLAB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
 }
 
 double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
-    std::cout << "Enter match computation"<< std::endl;
-    std::cout <<"width 1:"<<img1.width<<" 2:"<<img2.width << std::endl;
-    std::cout <<"height 1:"<<img1.height<<" 2:"<<img2.height << std::endl;
+    // std::cout << "Enter match computation"<< std::endl;
+    // std::cout <<"width 1:"<<img1.width<<" 2:"<<img2.width << std::endl;
+    // std::cout <<"height 1:"<<img1.height<<" 2:"<<img2.height << std::endl;
     if (img1.width != img2.width || img1.height != img2.height){
-        std::cout << "mauvaise dimension d'images "<< std::endl;
-        return false;  // Retourner une valeur indicative d'erreur, par exemple, -1.
+        std::cout << "Error: images dimensions"<< std::endl;
+        return false;  
     }
     double totalDistance = 0;
     int numPixels = 0;
@@ -133,9 +133,9 @@ double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
             numPixels++;
         }
     }
-    std::cout << "tatal distance: " << totalDistance << std::endl;
+    // std::cout << "total distance: " << totalDistance << std::endl;
     double averageDistance = totalDistance / numPixels;
-    std::cout << "average distance " << averageDistance << std::endl;
+    // std::cout << "average distance " << averageDistance << std::endl;
     return averageDistance;
 }
 
@@ -184,12 +184,12 @@ void compute_cpp(ImageView<rgb8> in)
 {
   if (!initialized)
   {
-    std::cout << "Initialized compute cpp" << std::endl;
+    std::cout << "Initialized Background" << std::endl;
     init_background_model(in);
     initialized = true;
   }
   else{
-    std::cout << " bg estimation " << std::endl;
+    std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
   }
 }
