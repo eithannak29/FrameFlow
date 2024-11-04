@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 
+
 #define SQR(x) ((x)*(x))
 
 /// Your cpp version of the algorithm
@@ -265,7 +266,7 @@ int background_estimation_process(ImageView<rgb8> in){
       time_since_match = 0;
     }
   }
-  std::cout << "Background match distance: " << match_distance << std::endl;
+  //std::cout << "Background match distance: " << match_distance << std::endl;
   return match_distance;
 }
 
