@@ -1,6 +1,7 @@
 #include "Compute.hpp"
 #include "Compute_utils.hpp"
 #include "Image.hpp"
+#include "filter.hpp"
 
 #include <iostream>
 
@@ -48,7 +49,7 @@ int background_estimation_process(ImageView<rgb8> in){
       time_since_match = 0;
     }
   }
-  //std::cout << "Background match distance: " << match_distance << std::endl;
+  // std::cout << "Background match distance: " << match_distance << std::endl;
   return match_distance;
 }
 
@@ -66,6 +67,7 @@ void compute_cpp(ImageView<rgb8> in)
     background_estimation_process(in);
   }
   applyFilter(in);
+  morphologicalOpening(in, 3);
 }
 
 extern "C" {
