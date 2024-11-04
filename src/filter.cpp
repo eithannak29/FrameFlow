@@ -75,8 +75,8 @@ void dilate(ImageView<rgb8>& image, int radius) {
 // Ouverture morphologique (érosion suivie de dilatation)
 void morphologicalOpening(ImageView<rgb8>& image, int radius) {
     // Étape 1 : Erosion
-    erode(image, diskKernel, radius);
+    erode(image,  radius);
 
     // Étape 2 : Dilatation
-    dilate(image, diskKernel, radius);
+    dilate(image, radius);
 }
