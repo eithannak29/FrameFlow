@@ -74,6 +74,7 @@ void dilate(ImageView<rgb8>& image, int radius) {
 
 // Ouverture morphologique (érosion suivie de dilatation)
 void morphologicalOpening(ImageView<rgb8>& image, int radius) {
+    std::cout << "start morphologie"  << std::endl;
     // Étape 1 : Erosion
     erode(image,  radius);
 
