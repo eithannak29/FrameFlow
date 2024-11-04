@@ -164,39 +164,6 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
 }
 
 
-double matchImagesRGB(ImageView<rgb8>& img1, ImageView<rgb8>& img2) {
-    // std::cout << "Enter match computation"<< std::endl;
-    // std::cout <<"width 1:"<<img1.width<<" 2:"<<img2.width << std::endl;
-    // std::cout <<"height 1:"<<img1.height<<" 2:"<<img2.height << std::endl;
-    if (img1.width != img2.width || img1.height != img2.height){
-        std::cout << "Error: images dimensions"<< std::endl;
-        return false;  
-    }
-    double totalDistance = 0;
-    int numPixels = 0;
-
-    for (int y = 0; y < img1.height; ++y) {
-        for (int x = 0; x < img1.width; ++x) {
-            rgb8* pixel1 = img1.buffer + y * (img1.stride / sizeof(rgb8)) + x;
-            rgb8* pixel2 = img2.buffer + y * (img2.stride / sizeof(rgb8)) + x;
-
-            // Calculer la distance Euclidienne entre les composantes RGB
-            int dr = pixel1->r - pixel2->r;
-            int dg = pixel1->g - pixel2->g;
-            int db = pixel1->b - pixel2->b;
-            double distance = std::sqrt(dr * dr + dg * dg + db * db);
-            
-            totalDistance += distance;
-            numPixels++;
-        }
-    }
-    // std::cout << "total distance: " << totalDistance << std::endl;
-    double averageDistance = totalDistance / numPixels;
-    // std::cout << "average distance " << averageDistance << std::endl;
-    return averageDistance;
-}
-
-
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
   for (int y=0; y < img1.height; y++){
     for (int x=0; x < img1.width; x++){
