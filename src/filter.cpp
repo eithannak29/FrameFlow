@@ -29,9 +29,8 @@ void erode(ImageView<rgb8>& image, int radius) {
             }
             if (erosion) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.g = pixel.r;
                 pixel.r = 0;
-                pixel.b = 255 - pixel.g;
+                pixel.b = pixel.g;
             }
         }
         image = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -62,9 +61,8 @@ void dilate(ImageView<rgb8>& image, int radius) {
             }
             if (dilatation) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.g = pixel.r;
-                pixel.r = 0;
-                pixel.b = 255 - pixel.g;
+                pixel.r = pixel.g;
+                pixel.b = 0;
             }
         }
     }
@@ -74,7 +72,7 @@ void dilate(ImageView<rgb8>& image, int radius) {
 
 // Ouverture morphologique (érosion suivie de dilatation)
 void morphologicalOpening(ImageView<rgb8>& image, int radius) {
-    std::cout << "start morphologie"  << std::endl;
+    // std::cout << "start morphologie"  << std::endl;
     // Étape 1 : Erosion
     erode(image,  radius);
 
