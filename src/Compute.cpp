@@ -120,38 +120,35 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-// Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte thermique)
-rgb8 mapToHeatmap(double value) {
-    value = std::max(0.0, std::min(1.0, value));
-    rgb8 color;
-    if (value <= 0.5) {
-        color.r = 0;
-        color.g = static_cast<uint8_t>(value * 2 * 255);
-        color.b = 255 - color.g;
-    } else {
-        color.r = static_cast<uint8_t>((value - 0.5) * 2 * 255);
-        color.g = 255 - color.r;
-        color.b = 0;
+void applyFilter(ImageView<rgb8> in) {
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8 pixel = in.buffer[index];
+      rgb8 bg_pixel = bg_value.buffer[index];
+
+      // Calculer la distance de couleur entre le pixel et le fond
+      int dr = pixel.r - bg_pixel.r;
+      int dg = pixel.g - bg_pixel.g;
+      int db = pixel.b - bg_pixel.b;
+      double distance = std::sqrt(dr * dr + dg * dg + db * db);
+
+      // Appliquer un effet visuel en fonction de la distance
+      if (distance < 50) {
+        // Si la distance est faible, on met le pixel en fond
+        in.buffer[index] = bg_pixel;
+      } else {
+        // Si la distance est élevée, on applique un effet de surbrillance
+        // Exemple : Échelle de gris basée sur la distance
+        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2));
+        // in.buffer[index] = {intensity, intensity, intensity}; // En niveaux de gris
+
+        // Pour une visualisation "thermique", vous pouvez utiliser un autre mapping
+        // Exemple : coloration simple en jaune pour les grandes différences
+        in.buffer[index] = {intensity, intensity, 0}; // Jaune
+      }
     }
-    return color;
-}
-
-// Fonction pour générer une carte thermique de mouvement
-void applyMotionHeatmap(const ImageView<rgb8>& bg, ImageView<rgb8>& in) {
-    for (int y = 0; y < in.height; ++y) {
-        for (int x = 0; x < in.width; ++x) {
-            int index = y * in.width + x;
-            rgb8& current_pixel = in.buffer[index];
-            rgb8& bg_pixel = bg.buffer[index];
-
-            Lab current_lab = rgbToLab(current_pixel);
-            Lab bg_lab = rgbToLab(bg_pixel);
-            double deltaE_value = deltaE(current_lab, bg_lab);
-
-            double normalized_value = std::min(deltaE_value / 100.0, 1.0);
-            current_pixel = mapToHeatmap(normalized_value);
-        }
-    }
+  }
 }
 
 
@@ -257,7 +254,7 @@ int background_estimation_process(ImageView<rgb8> in){
       }
       time_since_match++;
     }
-    else if (time_since_match < 10){
+    else if (time_since_match < 50){
       average(candidate_value, in);
       time_since_match++;
     }
@@ -283,7 +280,7 @@ void compute_cpp(ImageView<rgb8> in)
     // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
   }
-  applyMotionHeatmap(bg_value, in);
+  applyFilter(in);
 }
 
 
