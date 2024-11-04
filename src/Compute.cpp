@@ -67,7 +67,7 @@ void compute_cpp(ImageView<rgb8> in)
     background_estimation_process(in);
   }
   applyMotionHeatmap(bg_value, in);
-  morphologicalOpening(in, 3);
+  // morphologicalOpening(in, 3);
 }
 
 extern "C" {
