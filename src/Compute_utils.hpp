@@ -1,5 +1,5 @@
-#ifndef COLOR_UTILS_HPP
-#define COLOR_UTILS_HPP
+#ifndef COMPUTE_UTILS_HPP
+#define COMPUTE_UTILS_HPP
 
 #include "Image.hpp"
 
@@ -33,4 +33,4 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2);
 // Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte thermique)
 rgb8 mapToHeatmap(double value);
 
-#endif // COLOR_UTILS_HPP
+#endif // COMPUTE_UTILS_UTILS_HPP
