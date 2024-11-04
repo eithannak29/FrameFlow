@@ -257,7 +257,7 @@ int background_estimation_process(ImageView<rgb8> in){
       }
       time_since_match++;
     }
-    else if (time_since_match < 3){
+    else if (time_since_match < 7){
       average(candidate_value, in);
       time_since_match++;
     }
