@@ -104,17 +104,16 @@ void applyFilter(ImageView<rgb8> in) {
       int dg = pixel.g - bg_pixel.g;
       int db = pixel.b - bg_pixel.b;
       double distance = std::sqrt(dr * dr + dg * dg + db * db);
-      
+      uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2));
 
       // Appliquer un effet visuel en fonction de la distance
       if (distance < 50) {
-        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, (1 - distance) * 2));
         // Si la distance est faible, on met le pixel en fond
         in.buffer[index] = {0, intensity, intensity};
       } else {
         // Si la distance est élevée, on applique un effet de surbrillance
         
-        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2));
+
         in.buffer[index] = {intensity, intensity, 0};
       }
     }
