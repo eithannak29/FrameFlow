@@ -241,7 +241,7 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
 
 int background_estimation_process(ImageView<rgb8> in){
   double match_distance = matchImagesLab(bg_value, in);
-  double treshold = 1.3;
+  double treshold = 0.3;
   
   if (match_distance < treshold){
     average(bg_value, in);
