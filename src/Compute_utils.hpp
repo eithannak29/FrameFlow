@@ -26,11 +26,11 @@ double deltaE(const Lab& lab1, const Lab& lab2);
 
 // Fonctions pour le traitement d'images
 void init_background_model(ImageView<rgb8> in);
-void applyMotionHeatmap(const ImageView<rgb8>& bg, ImageView<rgb8>& in);
+void applyFilter(ImageView<rgb8> in);
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2);
 
 // Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte thermique)
 rgb8 mapToHeatmap(double value);
 
-#endif // COLOR_UTILS_HPP
+#endif // COMPUTE_UTILS_UTILS_HPP

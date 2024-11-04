@@ -66,7 +66,7 @@ void compute_cpp(ImageView<rgb8> in)
     // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
   }
-  applyMotionHeatmap(bg_value, in);
+  applyFilter(in);
   morphologicalOpening(in, 3);
 }
 
