@@ -1,6 +1,7 @@
 #include "Compute.hpp"
 #include "Compute_utils.hpp"
 #include "Image.hpp"
+#include "filter.hpp"
 
 #include <iostream>
 
@@ -66,6 +67,7 @@ void compute_cpp(ImageView<rgb8> in)
     background_estimation_process(in);
   }
   applyMotionHeatmap(bg_value, in);
+  morphologicalOpening(in, 3);
 }
 
 extern "C" {
