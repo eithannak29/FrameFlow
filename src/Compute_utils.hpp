@@ -1,5 +1,5 @@
-#ifndef COLOR_UTILS_HPP
-#define COLOR_UTILS_HPP
+#ifndef COMPUTE_UTILS_HPP
+#define COMPUTE_UTILS_HPP
 
 #include "Image.hpp"
 
