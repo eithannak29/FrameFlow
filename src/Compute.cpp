@@ -66,7 +66,7 @@ void compute_cpp(ImageView<rgb8> in)
     // std::cout << "Background estimation" << std::endl;
     background_estimation_process(in);
   }
-  applyFilter(in);
+  in = applyFilter(in);
   morphologicalOpening(in, 3);
 }
 

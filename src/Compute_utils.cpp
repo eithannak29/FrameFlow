@@ -109,15 +109,14 @@ void applyFilter(ImageView<rgb8> in) {
       // Appliquer un effet visuel en fonction de la distance
       if (distance < 50) {
         // Si la distance est faible, on met le pixel en fond
-        in.buffer[index] = {0, intensity, intensity};
+        in.buffer[index] = {0, 0, 0};
       } else {
         // Si la distance est élevée, on applique un effet de surbrillance
-        
-
         in.buffer[index] = {intensity, intensity, 0};
       }
     }
   }
+  return in;
 }
 
 
