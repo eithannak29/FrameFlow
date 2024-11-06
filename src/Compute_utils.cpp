@@ -92,7 +92,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-void applyFilter(ImageView<rgb8> in) {
+ImageView<rgb8> applyFilter(ImageView<rgb8> in) {
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
