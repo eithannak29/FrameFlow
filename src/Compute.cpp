@@ -47,6 +47,13 @@ int background_estimation_process(ImageView<rgb8> in){
     else{
       std::swap(bg_value, candidate_value);
       time_since_match = 0;
+
+      for (int y = 0; y < candidate_value.height; y++) {
+        for (int x = 0; x < candidate_value.width; x++) {
+          int index = y * candidate_value.width + x;
+          candidate_value.buffer[index] = {0, 0, 0};
+        }
+      }
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;

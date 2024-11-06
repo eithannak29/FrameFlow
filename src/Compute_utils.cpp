@@ -93,6 +93,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 }
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in) {
+  const double adaptationRate = 0.05;
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
@@ -110,6 +111,10 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in) {
       if (distance < 50) {
         // Si la distance est faible, on met le pixel en fond
         in.buffer[index] = {0, 0, 0};
+
+        bg_pixel.r = static_cast<uint8_t>(bg_pixel.r * (1 - adaptationRate) + pixel.r * adaptationRate);
+        bg_pixel.g = static_cast<uint8_t>(bg_pixel.g * (1 - adaptationRate) + pixel.g * adaptationRate);
+        bg_pixel.b = static_cast<uint8_t>(bg_pixel.b * (1 - adaptationRate) + pixel.b * adaptationRate);
       } else {
         // Si la distance est élevée, on applique un effet de surbrillance
         in.buffer[index] = {intensity, intensity, 0};
