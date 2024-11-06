@@ -162,16 +162,13 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
 }
 
 
-void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
-  for (int y=0; y < img1.height; y++){
-    for (int x=0; x < img1.width; x++){
-      int index = y * img1.width + x * 3;
-      rgb8 pixel1 = img1.buffer[index];
-      rgb8 pixel2 = img2.buffer[index];
-
-      pixel1.r = (pixel1.r + pixel2.r) / 2;
-      pixel1.g = (pixel1.g + pixel2.g) / 2;
-      pixel1.b = (pixel1.b + pixel2.b) / 2;
+void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2, double adaptationRate) {
+  for (int y = 0; y < img1.height; y++) {
+    for (int x = 0; x < img1.width; x++) {
+      int index = y * img1.width + x;
+      img1.buffer[index].r = static_cast<uint8_t>(img1.buffer[index].r * (1 - adaptationRate) + img2.buffer[index].r * adaptationRate);
+      img1.buffer[index].g = static_cast<uint8_t>(img1.buffer[index].g * (1 - adaptationRate) + img2.buffer[index].g * adaptationRate);
+      img1.buffer[index].b = static_cast<uint8_t>(img1.buffer[index].b * (1 - adaptationRate) + img2.buffer[index].b * adaptationRate);
     }
   }
 }
