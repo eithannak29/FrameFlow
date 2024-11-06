@@ -84,18 +84,6 @@ int background_estimation_process(ImageView<rgb8> in) {
   return match_distance;
 }
 
-// Modified average function with weighted blending
-void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2, double adaptationRate) {
-  for (int y = 0; y < img1.height; y++) {
-    for (int x = 0; x < img1.width; x++) {
-      int index = y * img1.width + x;
-      img1.buffer[index].r = static_cast<uint8_t>(img1.buffer[index].r * (1 - adaptationRate) + img2.buffer[index].r * adaptationRate);
-      img1.buffer[index].g = static_cast<uint8_t>(img1.buffer[index].g * (1 - adaptationRate) + img2.buffer[index].g * adaptationRate);
-      img1.buffer[index].b = static_cast<uint8_t>(img1.buffer[index].b * (1 - adaptationRate) + img2.buffer[index].b * adaptationRate);
-    }
-  }
-}
-
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
