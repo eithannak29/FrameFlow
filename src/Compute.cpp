@@ -99,6 +99,7 @@ void compute_cpp(ImageView<rgb8> in)
   }
   in = applyFilter(in);
   morphologicalOpening(in, 3);
+  hysteresis(in, 50, 100);
 }
 
 extern "C" {
