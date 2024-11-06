@@ -28,7 +28,6 @@ double deltaE(const Lab& lab1, const Lab& lab2);
 void init_background_model(ImageView<rgb8> in);
 ImageView<rgb8> applyFilter(ImageView<rgb8> in);
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
-void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2, double adaptationRate);
 
 // Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte thermique)
