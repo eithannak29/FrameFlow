@@ -85,8 +85,8 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
 
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, const std::vector<double>& distances) {
   // Seuil bas et seuil haut pour le seuillage d'hystérésis
-  const double lowThreshold = 0.15;     // Seuil bas pour contour faible
-  const double highThreshold = 0.25;    // Seuil haut pour contour fort
+  const double lowThreshold = 0.35;     // Seuil bas pour contour faible
+  const double highThreshold = 1;    // Seuil haut pour contour fort
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
