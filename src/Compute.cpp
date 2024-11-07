@@ -78,6 +78,7 @@ void compute_cpp(ImageView<rgb8> in)
     auto [match_distance, distances] = background_estimation_process(in);
     in = applyFilter(in, distances);
     morphologicalOpening(in, 3);
+    HysteresisThreshold(in, distances);
   }
   //in = applyFilter(in);
 
