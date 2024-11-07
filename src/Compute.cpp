@@ -79,7 +79,9 @@ void compute_cpp(ImageView<rgb8> in)
     in = applyFilter(in, distances);
     //in = applyFilterHeatmap(in, distances);
     morphologicalOpening(in, 3);
-    HysteresisThreshold(in);
+    ImageView<rgb8> mask = HysteresisThreshold(in);
+
+    in = applyRedMask(in, mask);
   }
   //in = applyFilter(in);
 
