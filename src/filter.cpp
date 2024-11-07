@@ -134,13 +134,16 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
   return in;
 }
 
-ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask) {
+ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels) {
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
 
       if (mask.buffer[index].r > 0) {
         in.buffer[index].r = std::min(255, static_cast<int>(in.buffer[index].r + 0.5 * 255));
+      }
+      else {
+        in.buffer[index] = initialPixels[index];
       }
     }
   }

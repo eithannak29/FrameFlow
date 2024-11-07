@@ -67,30 +67,19 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
 }
 
 template <class T>
-ImageView<T> copyImage(const ImageView<T>& src) {
-    ImageView<T> copy;
-    copy.width = src.width;
-    copy.height = src.height;
-    copy.stride = src.stride;
-
-    // Allouer un nouveau buffer pour le copy
-    copy.buffer = new T[src.width * src.height];
-
-    std::cout << "witdh" << copy.width << " height" << copy.height << " stride " << copy.stride << std::endl;
-
-    // Copier chaque élément
-    for (int y = 0; y < src.height; y++) {
-        for (int x = 0; x < src.width; x++) {
-            int index = y * src.width + x;
-            copy.buffer[index] = src.buffer[index];
-        }
-    }
-    return copy;
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
+    int totalSize = width * height; // Nombre total de pixels
+    std::vector<T> pixelArray(totalSize); // Création du tableau avec la taille appropriée
+    std::copy(sourceBuffer, sourceBuffer + totalSize, pixelArray.begin()); // Copie des pixels
+    return pixelArray;
 }
 
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
+
+  static std::vector<rgb8> initialPixels;
+
   if (!initialized)
   {
     // std::cout << "Initialized Background" << std::endl;
@@ -98,24 +87,22 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    ImageView<rgb8> cpy = copyImage(in);
+    initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
-    auto [match_distance, distances] = background_estimation_process(cpy);
+    auto [match_distance, distances] = background_estimation_process(in);
     std::cout << "filter" << std::endl;
-    cpy = applyFilter(cpy, distances);
+    in = applyFilter(in, distances);
     
     //in = applyFilterHeatmap(in, distances);
     std::cout << "morphologie" << std::endl;
-    morphologicalOpening(cpy, 3);
+    morphologicalOpening(in, 3);
     std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(cpy);
+    ImageView<rgb8> mask = HysteresisThreshold(in);
     std::cout << "apply mask" << std::endl;
 
-    in = applyRedMask(in, mask);
+    in = applyRedMask(in, mask, initialPixels);
     std::cout << "end" << std::endl;
 
-    delete[] cpy.buffer;
-    delete[] mask.buffer;
   }
 }
 
