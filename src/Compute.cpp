@@ -31,7 +31,7 @@ void mySwap(T& a, T& b) {
 
 // Function to initialize the background model
 std::tuple<double, std::vector<double>> background_estimation_process(ImageView<rgb8> in){
-  auto [match_distance, distances] = = matchImagesLab(bg_value, in);
+  auto [match_distance, distances] = matchImagesLab(bg_value, in);
   double treshold = 0.25;
   
   if (match_distance < treshold){
