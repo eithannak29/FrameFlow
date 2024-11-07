@@ -8,6 +8,6 @@
 // Appliquer une ouverture morphologique (érosion suivie de dilatation)
 void morphologicalOpening(ImageView<rgb8>& image, int radius);
 void hysteresisThresholding(ImageView<rgb8>& in, const ImageView<rgb8>& bg, double lowThreshold, double highThreshold);
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, const std::vector<double>& distances);
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in);
 
 #endif // COLOR_UTILS_HPP

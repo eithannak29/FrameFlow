@@ -82,36 +82,35 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
 }
 
 // seuillage d'hystérésis
-
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, const std::vector<double>& distances) {
-  // Seuil bas et seuil haut pour le seuillage d'hystérésis
-  const double lowThreshold = 0.35;     // Seuil bas pour contour faible
-  const double highThreshold = 1;    // Seuil haut pour contour fort
+ImageView<rgb8> HysteresisThresholdColorBased(ImageView<rgb8> in) {
+  const int lowThreshold = 50; 
+  const int highThreshold = 150;
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
-      double distance = distances[index];
+      rgb8 pixel = in.buffer[index];
 
-      // Seuillage d'hystérésis
-      if (distance >= highThreshold) {
-        // Marqué directement comme contour fort (blanc)
+      int intensity = (pixel.r + pixel.g + pixel.b) / 3;
+
+      if (intensity >= highThreshold) {
         in.buffer[index] = {255, 255, 255};
       } 
-      else if (distance >= lowThreshold) {
-        // Contour faible : vérifie les voisins pour continuité
+      else if (intensity >= lowThreshold) {
         bool connectedToStrongEdge = false;
-        
-        // Vérifie les pixels voisins pour voir si l'un est un contour fort
+
         for (int dy = -1; dy <= 1; dy++) {
           for (int dx = -1; dx <= 1; dx++) {
             if (dy == 0 && dx == 0) continue; // Ignore le pixel actuel
             int neighborX = x + dx;
             int neighborY = y + dy;
-            
+
             if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
               int neighborIndex = neighborY * in.width + neighborX;
-              if (distances[neighborIndex] >= highThreshold) {
+              rgb8 neighborPixel = in.buffer[neighborIndex];
+              int neighborIntensity = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
+
+              if (neighborIntensity >= highThreshold) {
                 connectedToStrongEdge = true;
                 break;
               }
@@ -120,7 +119,6 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, const std::vector<double
           if (connectedToStrongEdge) break;
         }
 
-        // Si connecté à un contour fort, on marque en blanc, sinon en noir
         if (connectedToStrongEdge) {
           in.buffer[index] = {255, 255, 255};
         } else {
@@ -128,11 +126,10 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, const std::vector<double
         }
       } 
       else {
-        // Considéré comme arrière-plan (noir) si sous le seuil bas
         in.buffer[index] = {0, 0, 0};
       }
     }
   }
-  
+
   return in;
 }
