@@ -113,6 +113,11 @@ void compute_cpp(ImageView<rgb8> in)
 
     in = applyRedMask(in, mask);
     std::cout << "end" << std::endl;
+
+    delete[] cpy.buffer;
+    delete[] mask.buffer;
+    delete cpy;
+    delete mask;
   }
 }
 
