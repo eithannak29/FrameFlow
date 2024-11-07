@@ -92,7 +92,7 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    ImageView<rgb8> filteredImage = copyImageMalloc(in);
+    ImageView<rgb8> filteredImage = copyImage(in);
     // std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(filteredImage);
     filteredImage = applyFilter(filteredImage, distances);
