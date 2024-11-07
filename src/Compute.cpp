@@ -96,7 +96,7 @@ void compute_cpp(ImageView<rgb8> in)
     std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(in);
     std::cout << "applyFilter" << std::endl;
-    filteredImage = applyFilter(in, distances);
+    in = applyFilter(in, distances);
     //in = applyFilterHeatmap(in, distances);
     std::cout << "morphologicalOpening" << std::endl;
     morphologicalOpening(in, 3);
