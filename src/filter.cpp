@@ -139,7 +139,7 @@ ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
 
-      if (mask.buffer[index].r == 255) { // Vérifier si le masque est blanc (contour détecté)
+      if (mask.buffer[index].r > 0) {
         in.buffer[index].r = std::min(255, static_cast<int>(in.buffer[index].r + 0.5 * 255));
       }
     }

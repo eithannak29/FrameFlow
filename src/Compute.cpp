@@ -5,6 +5,7 @@
 #include <tuple>
 #include <vector>
 #include <cstdlib>
+#include <cstring> // Pour std::memcpy
 
 #include <iostream>
 
@@ -65,38 +66,27 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   return std::make_tuple(match_distance, distances);
 }
 
-ImageView<rgb8> copyImage(const ImageView<rgb8>& src) {
-    ImageView<rgb8> copy;
-    copy.buffer = new rgb8[src.width * src.height];
-    copy.width = src.width;
-    copy.height = src.height;
-    copy.stride = src.stride;
+ImageView<rgb8>* copyImage(const ImageView<rgb8>& src) {
+    // Allouer dynamiquement une nouvelle instance d'ImageView
+    ImageView<rgb8>* copy = new ImageView<rgb8>;
+    
+    // Initialiser les dimensions et le buffer
+    copy->buffer = new rgb8[src.width * src.height];
+    copy->width = src.width;
+    copy->height = src.height;
+    copy->stride = src.stride;
 
+    // Copier les données pixel par pixel
     for (int y = 0; y < src.height; y++) {
         for (int x = 0; x < src.width; x++) {
             int index = y * src.width + x;
-            copy.buffer[index] = src.buffer[index];
+            copy->buffer[index] = src.buffer[index];  // Copier chaque pixel
         }
     }
+    
+    // Retourner le pointeur vers la copie
     return copy;
 }
-
-#include <cstring> // Pour std::memcpy
-
-ImageView<rgb8> copyImageMemcpy(const ImageView<rgb8>& src) {
-    // Allouer de la mémoire pour le buffer de la copie
-    ImageView<rgb8> copy;
-    copy.width = src.width;
-    copy.height = src.height;
-    copy.stride = src.stride;
-    copy.buffer = new rgb8[src.width * src.height]; // Allouer le buffer pour la copie
-
-    // Copier les données du buffer source dans le buffer de la copie
-    std::memcpy(copy.buffer, src.buffer, src.width * src.height * sizeof(rgb8));
-
-    return copy;
-}
-
 
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
@@ -108,20 +98,16 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    ImageView<rgb8> cpy = copyImage(in);
+    ImageView<rgb8>* cpy = copyImage(in);
 
-    //auto [match_distance, distances] = background_estimation_process(in);
-    //in = applyFilter(in, distances);
+    auto [match_distance, distances] = background_estimation_process(*cpy);
+    *cpy = applyFilter(*cpy, distances);
     //in = applyFilterHeatmap(in, distances);
-    //morphologicalOpening(in, 3);
-    //ImageView<rgb8> mask = HysteresisThreshold(in);
+    morphologicalOpening(*cpy, 3);
+    ImageView<rgb8> mask = HysteresisThreshold(*cpy);
 
-    //in = applyRedMask(cpy, mask);
-    &in = &cpy;
+    in = applyRedMask(in, mask);
   }
-  //in = applyFilter(in);
-
-  //hysteresisThresholding(in, bg_value, 6, 30);
 }
 
 extern "C" {
