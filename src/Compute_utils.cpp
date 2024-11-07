@@ -125,7 +125,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
     }
   }
   
-  return filtered;
+  return in;
 }
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
