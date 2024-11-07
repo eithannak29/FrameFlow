@@ -26,7 +26,7 @@ int background_estimation_process(ImageView<rgb8> in){
   double match_distance = matchImagesLab(bg_value, in);
   double treshold = 0.25;
   
-  if (match_distance < treshold && time_since_match < 1000){
+  if (match_distance < treshold && time_since_match < 100){
     average(bg_value, in);
     time_since_match = 0;
   }
