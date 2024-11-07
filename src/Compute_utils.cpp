@@ -141,7 +141,7 @@ std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& im
 
     if (img1.width != img2.width || img1.height != img2.height) {
         std::cerr << "Erreur : les dimensions des images ne correspondent pas." << std::endl;
-        return return std::make_tuple(-1.0, distances);  // Retourne une valeur indicative d'erreur
+        return std::make_tuple(-1.0, distances);  // Retourne une valeur indicative d'erreur
     }
 
     double totalDistance = 0.0;
