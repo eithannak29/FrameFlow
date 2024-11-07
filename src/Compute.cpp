@@ -49,12 +49,12 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       }
       time_since_match++;
     }
-    else if (time_since_match < 100){
+    else if (time_since_match < 150){
       average(candidate_value, in);
       time_since_match++;
     }
     else{
-      if (match_distance_candidate > treshold){
+      if (match_distance_candidate < treshold){
         mySwap(bg_value, candidate_value);
         time_since_match = 0;
       }
