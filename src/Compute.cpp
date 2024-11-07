@@ -64,6 +64,12 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   return std::make_tuple(match_distance, distances);
 }
 
+ImageView<rgb8> copyImage(const ImageView<rgb8>& src) {
+  ImageView<rgb8> copy = {new rgb8[src.width * src.height], src.width, src.height, src.stride};
+  std::copy(src.buffer, src.buffer + src.width * src.height, copy.buffer);
+  return copy;
+}
+
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
@@ -74,12 +80,13 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
+    ImageView<rgb8> filteredImage = copyImage(in);
     // std::cout << "Background estimation" << std::endl;
-    auto [match_distance, distances] = background_estimation_process(in);
-    in = applyFilter(in, distances);
+    auto [match_distance, distances] = background_estimation_process(filteredImage);
+    in = applyFilter(filteredImage, distances);
     //in = applyFilterHeatmap(in, distances);
-    morphologicalOpening(in, 3);
-    ImageView<rgb8> mask = HysteresisThreshold(in);
+    morphologicalOpening(filteredImage, 3);
+    ImageView<rgb8> mask = HysteresisThreshold(filteredImage);
 
     in = applyRedMask(in, mask);
   }
