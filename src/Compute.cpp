@@ -91,20 +91,20 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    ImageView<rgb8> filteredImage = copyImage(in);
+    ImageView<rgb8> cpy = copyImage(in);
     // std::cout << "Background estimation" << std::endl;
     std::cout << "Background estimation" << std::endl;
-    auto [match_distance, distances] = background_estimation_process(filteredImage);
+    auto [match_distance, distances] = background_estimation_process(in);
     std::cout << "applyFilter" << std::endl;
-    filteredImage = applyFilter(filteredImage, distances);
+    filteredImage = applyFilter(in, distances);
     //in = applyFilterHeatmap(in, distances);
     std::cout << "morphologicalOpening" << std::endl;
-    morphologicalOpening(filteredImage, 3);
+    morphologicalOpening(in, 3);
     std::cout << "HysteresisThreshold" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(filteredImage);
+    ImageView<rgb8> mask = HysteresisThreshold(in);
 
     std::cout << "applyRedMask" << std::endl;
-    in = applyRedMask(in, mask);
+    in = applyRedMask(cpy, mask);
   }
   //in = applyFilter(in);
 
