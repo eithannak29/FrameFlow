@@ -94,6 +94,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 }
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in, double distance) {
+  print("applyFilter: distance = ", distance);  // Debug print
   const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
   const double strictDistanceThreshold = 0.3;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
