@@ -100,7 +100,7 @@ void compute_cpp(ImageView<rgb8> in)
   in = applyFilter(in);
   morphologicalOpening(in, 3);
 
-  hysteresisThresholding(in, bg_value, 6, 30);
+  //hysteresisThresholding(in, bg_value, 6, 30);
 }
 
 extern "C" {
