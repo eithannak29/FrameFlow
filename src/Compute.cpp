@@ -81,6 +81,23 @@ ImageView<rgb8> copyImage(const ImageView<rgb8>& src) {
     return copy;
 }
 
+#include <cstring> // Pour std::memcpy
+
+ImageView<rgb8> copyImageMemcpy(const ImageView<rgb8>& src) {
+    // Allouer de la mémoire pour le buffer de la copie
+    ImageView<rgb8> copy;
+    copy.width = src.width;
+    copy.height = src.height;
+    copy.stride = src.stride;
+    copy.buffer = new rgb8[src.width * src.height]; // Allouer le buffer pour la copie
+
+    // Copier les données du buffer source dans le buffer de la copie
+    std::memcpy(copy.buffer, src.buffer, src.width * src.height * sizeof(rgb8));
+
+    return copy;
+}
+
+
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
@@ -92,18 +109,13 @@ void compute_cpp(ImageView<rgb8> in)
   }
   else{
     ImageView<rgb8> cpy = copyImage(in);
-    // std::cout << "Background estimation" << std::endl;
-    std::cout << "Background estimation" << std::endl;
+
     auto [match_distance, distances] = background_estimation_process(in);
-    std::cout << "applyFilter" << std::endl;
     in = applyFilter(in, distances);
     //in = applyFilterHeatmap(in, distances);
-    std::cout << "morphologicalOpening" << std::endl;
     morphologicalOpening(in, 3);
-    std::cout << "HysteresisThreshold" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(in);
 
-    std::cout << "applyRedMask" << std::endl;
     in = applyRedMask(cpy, mask);
   }
   //in = applyFilter(in);
