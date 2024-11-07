@@ -112,7 +112,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
       // int db = pixel.b - bg_pixel.b;
       // double distance = std::sqrt(dr * dr + dg * dg + db * db);
       double distance = distances[index];
-      std::cout << "Distance: " << distance << ", index: " << index << std::endl ;
+      //std::cout << "Distance: " << distance << ", index: " << index << std::endl ;
 
       // Background adaptation and filtering
       if (distance < strictDistanceThreshold) {
