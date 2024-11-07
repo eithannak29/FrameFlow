@@ -69,7 +69,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;
-  return {match_distance, distances};
+  return std::make_tuple(match_distance, distances);
 }
 
 /// CPU Single threaded version of the Method

@@ -170,7 +170,7 @@ std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& im
     }
 
     double averageDistance = totalDistance / numPixels;
-    return {averageDistance, distances};
+    return std::make_tuple(match_distance, distances);
 }
 
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
