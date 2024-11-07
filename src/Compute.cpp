@@ -21,7 +21,6 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
-bool swapped = false;
 
 template <typename T>
 void mySwap(T& a, T& b) {
@@ -56,7 +55,6 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
     else{
       mySwap(bg_value, candidate_value);
       time_since_match = 0;
-      swapped = true;
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;
@@ -76,7 +74,6 @@ void compute_cpp(ImageView<rgb8> in)
     // std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(in);
     in = applyFilter(in, distances, swapped);
-    swapped = false;
     //in = applyFilter(in, distance);
   }
   //in = applyFilter(in);
