@@ -120,7 +120,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
       } else {
         // For objects that differ significantly from the background, increase highlight intensity
         uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[index] = {0, intensity, intensity};
+        in.buffer[index] = {intensity, intensity, 0};
       }
     }
   }
