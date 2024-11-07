@@ -20,13 +20,19 @@ ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
 
+template <typename T>
+void mySwap(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
 
 // Function to initialize the background model
-int background_estimation_process(ImageView<rgb8> in){
+double background_estimation_process(ImageView<rgb8> in){
   double match_distance = matchImagesLab(bg_value, in);
   double treshold = 0.25;
   
-  if (match_distance < treshold && time_since_match < 100){
+  if (match_distance < treshold){
     average(bg_value, in);
     time_since_match = 0;
   }
@@ -40,12 +46,12 @@ int background_estimation_process(ImageView<rgb8> in){
       }
       time_since_match++;
     }
-    else if (time_since_match < 100){
+    else if (time_since_match < 10){
       average(candidate_value, in);
       time_since_match++;
     }
     else{
-      std::swap(bg_value, candidate_value);
+      mySwap(bg_value, candidate_value);
       time_since_match = 0;
 
       for (int y = 0; y < candidate_value.height; y++) {
@@ -75,9 +81,10 @@ void compute_cpp(ImageView<rgb8> in)
   }
   else{
     // std::cout << "Background estimation" << std::endl;
-    background_estimation_process(in);
+    double distance = background_estimation_process(in);
+    in = applyFilter(in, distance);
   }
-  in = applyFilter(in);
+  //in = applyFilter(in);
   //morphologicalOpening(in, 3);
 
   //hysteresisThresholding(in, bg_value, 6, 30);
