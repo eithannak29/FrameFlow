@@ -57,6 +57,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       if (match_distance_candidate > treshold){
         mySwap(bg_value, candidate_value);
         time_since_match = 0;
+      }
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;
