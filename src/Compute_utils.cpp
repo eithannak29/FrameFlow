@@ -20,7 +20,6 @@ void init_background_model(ImageView<rgb8> in)
     }
   }
   time_since_match = 0;
-
 }
 
 // Fonction pour convertir sRGB en RGB linéaire

@@ -48,7 +48,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       }
       time_since_match++;
     }
-    else if (time_since_match < 10){
+    else if (time_since_match < 2){
       average(candidate_value, in);
       time_since_match++;
     }
