@@ -24,9 +24,9 @@ bool initialized = false;
 // Function to initialize the background model
 int background_estimation_process(ImageView<rgb8> in){
   double match_distance = matchImagesLab(bg_value, in);
-  double treshold = 0.3;
+  double treshold = 0.25;
   
-  if (match_distance < treshold){
+  if (match_distance < treshold && time_since_match < 1000){
     average(bg_value, in);
     time_since_match = 0;
   }
@@ -51,6 +51,10 @@ int background_estimation_process(ImageView<rgb8> in){
       for (int y = 0; y < candidate_value.height; y++) {
         for (int x = 0; x < candidate_value.width; x++) {
           int index = y * candidate_value.width + x;
+          rgb8 bg_pixel = candidate_value.buffer[index];
+          bg_pixel.r = static_cast<uint8_t>(0);
+          bg_pixel.g = static_cast<uint8_t>(0);
+          bg_pixel.b = static_cast<uint8_t>(0);
           candidate_value.buffer[index] = {0, 0, 0};
         }
       }

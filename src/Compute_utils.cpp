@@ -93,30 +93,29 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 }
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in) {
-  const double adaptationRate = 0.05;
+  const double adaptationRate = 0.07;  // Increase adaptation rate slightly
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
       rgb8 pixel = in.buffer[index];
       rgb8 bg_pixel = bg_value.buffer[index];
 
-      // Calculer la distance de couleur entre le pixel et le fond
+      // Calculate color distance
       int dr = pixel.r - bg_pixel.r;
       int dg = pixel.g - bg_pixel.g;
       int db = pixel.b - bg_pixel.b;
       double distance = std::sqrt(dr * dr + dg * dg + db * db);
-      uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2));
 
-      // Appliquer un effet visuel en fonction de la distance
-      if (distance < 50) {
-        // Si la distance est faible, on met le pixel en fond
-        in.buffer[index] = {0, 0, 0};
-
+      // Apply a stricter condition
+      if (distance < 40) {  // Stricter threshold, from 50 to 40
+        in.buffer[index] = {0, 0, 0};  // Mark as background
+        // Update background model with slightly higher adaptation rate
         bg_pixel.r = static_cast<uint8_t>(bg_pixel.r * (1 - adaptationRate) + pixel.r * adaptationRate);
         bg_pixel.g = static_cast<uint8_t>(bg_pixel.g * (1 - adaptationRate) + pixel.g * adaptationRate);
         bg_pixel.b = static_cast<uint8_t>(bg_pixel.b * (1 - adaptationRate) + pixel.b * adaptationRate);
-      } else {
-        // Si la distance est élevée, on applique un effet de surbrillance
+    } else {
+        // Highlight more selectively
+        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2.5));
         in.buffer[index] = {intensity, intensity, 0};
       }
     }
