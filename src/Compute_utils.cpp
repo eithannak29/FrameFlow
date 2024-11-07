@@ -93,7 +93,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-ImageView<rgb8> applyFilter(ImageView<rgb8> in, int distance) {
+ImageView<rgb8> applyFilter(ImageView<rgb8> in, double distance) {
   const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
   const double strictDistanceThreshold = 0.3;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
@@ -105,9 +105,9 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, int distance) {
       rgb8 bg_pixel = bg_value.buffer[index];
 
       // Calculate color distance between current pixel and background model
-      int dr = pixel.r - bg_pixel.r;
-      int dg = pixel.g - bg_pixel.g;
-      int db = pixel.b - bg_pixel.b;
+      // int dr = pixel.r - bg_pixel.r;
+      // int dg = pixel.g - bg_pixel.g;
+      // int db = pixel.b - bg_pixel.b;
       //double distance = std::sqrt(dr * dr + dg * dg + db * db);
 
       // Background adaptation and filtering

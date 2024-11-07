@@ -82,9 +82,9 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     // std::cout << "Background estimation" << std::endl;
     double distance = background_estimation_process(in);
-    in = applyFilter(in, distance);
+    //in = applyFilter(in, distance);
   }
-  //in = applyFilter(in);
+  in = applyFilter(in);
   //morphologicalOpening(in, 3);
 
   //hysteresisThresholding(in, bg_value, 6, 30);
