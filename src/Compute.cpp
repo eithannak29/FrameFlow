@@ -117,7 +117,7 @@ void compute_cpp(ImageView<rgb8> in)
     //ImageView<rgb8> mask = HysteresisThreshold(in);
 
     //in = applyRedMask(cpy, mask);
-    in = cpy;
+    &in = &cpy;
   }
   //in = applyFilter(in);
 
