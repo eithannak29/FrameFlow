@@ -90,18 +90,18 @@ void compute_cpp(ImageView<rgb8> in)
     initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
     auto [match_distance, distances] = background_estimation_process(in);
-    std::cout << "filter" << std::endl;
+    //std::cout << "filter" << std::endl;
     in = applyFilter(in, distances);
     
     //in = applyFilterHeatmap(in, distances);
-    std::cout << "morphologie" << std::endl;
+    //std::cout << "morphologie" << std::endl;
     morphologicalOpening(in, 3);
-    std::cout << "mask" << std::endl;
+    //std::cout << "mask" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(in);
-    std::cout << "apply mask" << std::endl;
+    //std::cout << "apply mask" << std::endl;
 
     in = applyRedMask(in, mask, initialPixels);
-    std::cout << "end" << std::endl;
+    //std::cout << "end" << std::endl;
 
   }
 }
