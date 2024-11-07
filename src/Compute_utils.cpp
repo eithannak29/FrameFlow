@@ -97,7 +97,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 }
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
-  const double adaptationRate = 0.1;
+  //const double adaptationRate = 0.1;
   const double strictDistanceThreshold = 0.25;
   const double highlightDistanceMultiplier = 2.8; 
 
@@ -106,7 +106,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
-      rgb8 pixel = in.buffer[index];
+      //rgb8 pixel = in.buffer[index];
       //rgb8 bg_pixel = bg_value.buffer[index];
 
       double distance = distances[index];

@@ -78,7 +78,6 @@ ImageView<rgb8> copyImage(const ImageView<rgb8>& src) {
             copy.buffer[index] = src.buffer[index];
         }
     }
-
     return copy;
 }
 
@@ -94,12 +93,17 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     ImageView<rgb8> filteredImage = copyImage(in);
     // std::cout << "Background estimation" << std::endl;
+    std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(filteredImage);
+    std::cout << "applyFilter" << std::endl;
     filteredImage = applyFilter(filteredImage, distances);
     //in = applyFilterHeatmap(in, distances);
+    std::cout << "morphologicalOpening" << std::endl;
     morphologicalOpening(filteredImage, 3);
+    std::cout << "HysteresisThreshold" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(filteredImage);
 
+    std::cout << "applyRedMask" << std::endl;
     in = applyRedMask(in, mask);
   }
   //in = applyFilter(in);
