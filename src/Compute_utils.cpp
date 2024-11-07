@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <tuple>
 
 #define SQR(x) ((x)*(x))
 
@@ -93,10 +95,9 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-ImageView<rgb8> applyFilter(ImageView<rgb8> in, double distance) {
-  print("applyFilter: distance = ", distance);  // Debug print
+ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
   const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
-  const double strictDistanceThreshold = 0.3;  // Stricter threshold to identify background
+  const double strictDistanceThreshold = 0.3 //25.0;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
 
   for (int y = 0; y < in.height; y++) {
@@ -109,7 +110,9 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, double distance) {
       // int dr = pixel.r - bg_pixel.r;
       // int dg = pixel.g - bg_pixel.g;
       // int db = pixel.b - bg_pixel.b;
-      //double distance = std::sqrt(dr * dr + dg * dg + db * db);
+      // double distance = std::sqrt(dr * dr + dg * dg + db * db);
+      double distance = distances[index];
+      print(index, ": distance is ", distance);
 
       // Background adaptation and filtering
       if (distance < strictDistanceThreshold) {
@@ -133,7 +136,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, double distance) {
 
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
-double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
+std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
     if (img1.width != img2.width || img1.height != img2.height) {
         std::cerr << "Erreur : les dimensions des images ne correspondent pas." << std::endl;
         return -1.0;  // Retourne une valeur indicative d'erreur
@@ -141,6 +144,7 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
 
     double totalDistance = 0.0;
     int numPixels = img1.width * img1.height;
+    std::vector<double> distances;
 
     // Pré-calcul des strides en nombre de pixels
     int stride1 = img1.stride / sizeof(rgb8);
@@ -161,11 +165,12 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
             // Calculer la distance ΔE
             double distance = deltaE(lab1, lab2);
             totalDistance += distance;
+            distances.push_back(distance);
         }
     }
 
     double averageDistance = totalDistance / numPixels;
-    return averageDistance;
+    return {averageDistance, distances};
 }
 
 void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {

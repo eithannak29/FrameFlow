@@ -2,6 +2,8 @@
 #include "Compute_utils.hpp"
 #include "Image.hpp"
 #include "filter.hpp"
+#include <tuple>
+#include <vector>
 
 #include <iostream>
 
@@ -28,8 +30,8 @@ void mySwap(T& a, T& b) {
 }
 
 // Function to initialize the background model
-double background_estimation_process(ImageView<rgb8> in){
-  double match_distance = matchImagesLab(bg_value, in);
+std::tuple<double, std::vector<double>> background_estimation_process(ImageView<rgb8> in){
+  auto [match_distance, distances] = = matchImagesLab(bg_value, in);
   double treshold = 0.25;
   
   if (match_distance < treshold){
@@ -67,7 +69,7 @@ double background_estimation_process(ImageView<rgb8> in){
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;
-  return match_distance;
+  return {match_distance, distances};
 }
 
 /// CPU Single threaded version of the Method
@@ -81,8 +83,9 @@ void compute_cpp(ImageView<rgb8> in)
   }
   else{
     // std::cout << "Background estimation" << std::endl;
-    double distance = background_estimation_process(in);
-    in = applyFilter(in, distance);
+    auto [match_distance, distances] = background_estimation_process(in);
+    in = applyFilter(in, distances);
+    //in = applyFilter(in, distance);
   }
   //in = applyFilter(in);
   //morphologicalOpening(in, 3);
