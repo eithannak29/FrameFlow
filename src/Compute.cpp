@@ -59,11 +59,17 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       for (int y = 0; y < candidate_value.height; y++) {
         for (int x = 0; x < candidate_value.width; x++) {
           int index = y * candidate_value.width + x;
-          rgb8 bg_pixel = candidate_value.buffer[index];
-          bg_pixel.r = static_cast<uint8_t>(0);
-          bg_pixel.g = static_cast<uint8_t>(0);
-          bg_pixel.b = static_cast<uint8_t>(0);
-          candidate_value.buffer[index] = {0, 0, 0};
+          candidate_value.buffer[index] = {0, 0, 0}; // Black color
+        }
+      }
+
+      // Also ensure bg_value is set to black where needed
+      for (int y = 0; y < bg_value.height; y++) {
+        for (int x = 0; x < bg_value.width; x++) {
+          int index = y * bg_value.width + x;
+          if (bg_value.buffer[index].r != 0 || bg_value.buffer[index].g != 0 || bg_value.buffer[index].b != 0) {
+            bg_value.buffer[index] = {0, 0, 0};  // Set non-black pixels to black
+          }
         }
       }
     }
