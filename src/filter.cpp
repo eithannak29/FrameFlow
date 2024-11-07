@@ -83,8 +83,8 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
 
 // seuillage d'hystérésis
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 15; 
-  const int highThreshold = 45;
+  const int lowThreshold = 25; 
+  const int highThreshold = 65;
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
