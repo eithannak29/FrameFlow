@@ -32,7 +32,7 @@ void mySwap(T& a, T& b) {
 // Function to initialize the background model
 std::tuple<double, std::vector<double>> background_estimation_process(ImageView<rgb8> in){
   auto [match_distance, distances] = matchImagesLab(bg_value, in);
-  auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in);
+  auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in); // distance entre le candidat et l'image actuelle, à voir
   double treshold = 0.25;
   
   if (match_distance < treshold){
@@ -54,7 +54,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       time_since_match++;
     }
     else{
-      if (match_distance_candidate < treshold){
+      if (match_distance_candidate < treshold){  // cas ou l'on veux changer de background, et que le mouvement n'est pas éfemère
         mySwap(bg_value, candidate_value);
         time_since_match = 0;
       }
@@ -77,10 +77,9 @@ void compute_cpp(ImageView<rgb8> in)
     // std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(in);
     in = applyFilter(in, distances);
-    //in = applyFilter(in, distance);
+    morphologicalOpening(in, 3);
   }
   //in = applyFilter(in);
-  //morphologicalOpening(in, 3);
 
   //hysteresisThresholding(in, bg_value, 6, 30);
 }
