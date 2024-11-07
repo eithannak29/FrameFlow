@@ -76,7 +76,7 @@ ImageView<T> copyImage(const ImageView<T>& src) {
     // Allouer un nouveau buffer pour le copy
     copy.buffer = new T[src.width * src.height];
 
-    std::cout << "witdh" << copy->width << " height" << copy->height << " stride" << std::endl;
+    std::cout << "witdh" << copy.width << " height" << copy.height << std::endl;
 
     // Copier chaque élément
     for (int y = 0; y < src.height; y++) {
@@ -98,18 +98,18 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    ImageView<rgb8>* cpy = copyImage(in);
+    ImageView<rgb8> cpy = copyImage(in);
 
     std::cout << "Processing frame" << std::endl;
-    auto [match_distance, distances] = background_estimation_process(*cpy);
+    auto [match_distance, distances] = background_estimation_process(cpy);
     std::cout << "filter" << std::endl;
-    *cpy = applyFilter(*cpy, distances);
+    cpy = applyFilter(cpy, distances);
     
     //in = applyFilterHeatmap(in, distances);
     std::cout << "morphologie" << std::endl;
-    morphologicalOpening(*cpy, 3);
+    morphologicalOpening(cpy, 3);
     std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(*cpy);
+    ImageView<rgb8> mask = HysteresisThreshold(cpy);
     std::cout << "apply mask" << std::endl;
 
     in = applyRedMask(in, mask);
