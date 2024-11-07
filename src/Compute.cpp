@@ -76,9 +76,10 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     // std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(in);
-    in = applyFilter(in, distances);
-    morphologicalOpening(in, 3);
-    HysteresisThreshold(in, distances);
+    //in = applyFilter(in, distances);
+    in = applyFilterHeatmap(in, distances);
+    //morphologicalOpening(in, 3);
+    //HysteresisThreshold(in, distances);
   }
   //in = applyFilter(in);
 
