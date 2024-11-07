@@ -6,6 +6,7 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
+#include <cstdlib>
 
 #define SQR(x) ((x)*(x))
 
@@ -96,19 +97,14 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 }
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
-  const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
-  const double strictDistanceThreshold = 0.25; //25.0;  // Stricter threshold to identify background
-  const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
+  const double adaptationRate = 0.1;
+  const double strictDistanceThreshold = 0.25;
+  const double highlightDistanceMultiplier = 2.8; 
 
-  ImageView<rgb8> filtered = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+  //ImageView<rgb8> filtered = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
-      // if (swapped){
-      //   int index = y * in.width + x;
-      //   bg__value.buffer[index] = {0,0,0};
-      // }
-
       int index = y * in.width + x;
       rgb8 pixel = in.buffer[index];
       //rgb8 bg_pixel = bg_value.buffer[index];
@@ -119,41 +115,17 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
       // Background adaptation and filtering
       if (distance < strictDistanceThreshold) {
         // Mark as background if within threshold
-        filtered.buffer[index] = {0, 0, 0};
+        in.buffer[index] = {0, 0, 0};
         
       } else {
         // For objects that differ significantly from the background, increase highlight intensity
         uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
-        filtered.buffer[index] = {0, intensity, intensity};
+        in.buffer[index] = {0, intensity, intensity};
       }
     }
   }
   
   return filtered;
-}
-
-ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
-  double maxDistance = *std::max_element(distances.begin(), distances.end());
-
-  if (maxDistance < 1e-5) {
-    maxDistance = 1e-5;
-  }
-  
-  for (int y = 0; y < in.height; y++) {
-    for (int x = 0; x < in.width; x++) {
-      int index = y * in.width + x;
-      double distance = distances[index];
-      
-      double normalizedDistance = distance / maxDistance;
-      
-      uint8_t red = static_cast<uint8_t>(255 * normalizedDistance);
-      uint8_t blue = static_cast<uint8_t>(255 * (1 - normalizedDistance));
-      
-      in.buffer[index] = {red, 0, blue};
-    }
-  }
-  
-  return in;
 }
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab

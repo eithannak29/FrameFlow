@@ -4,6 +4,7 @@
 #include "filter.hpp"
 #include <tuple>
 #include <vector>
+#include <cstdlib>
 
 #include <iostream>
 
@@ -64,6 +65,20 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   return std::make_tuple(match_distance, distances);
 }
 
+ImageView<rgb8> copyImageMalloc(const ImageView<rgb8>& src) {
+    // Créer une nouvelle ImageView
+    ImageView<rgb8> copy;
+    copy.buffer = static_cast<rgb8*>(malloc(src.width * src.height * sizeof(rgb8)));
+    copy.width = src.width;
+    copy.height = src.height;
+    copy.stride = src.stride;
+
+    // Copier les données pixel par pixel
+    std::copy(src.buffer, src.buffer + (src.width * src.height), copy.buffer);
+
+    return copy;
+}
+
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
@@ -74,18 +89,15 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    //ImageView<rgb8> filteredImage = copyImage(in);
+    ImageView<rgb8> filteredImage = copyImageMalloc(in);
     // std::cout << "Background estimation" << std::endl;
-    auto [match_distance, distances] = background_estimation_process(in);
-    ImageView<rgb8> filteredImage = applyFilter(in, distances);
+    auto [match_distance, distances] = background_estimation_process(filteredImage);
+    filteredImage = applyFilter(filteredImage, distances);
     //in = applyFilterHeatmap(in, distances);
     morphologicalOpening(filteredImage, 3);
     ImageView<rgb8> mask = HysteresisThreshold(filteredImage);
 
     in = applyRedMask(in, mask);
-
-    delete[] filteredImage.buffer;
-    delete[] mask.buffer;
   }
   //in = applyFilter(in);
 
