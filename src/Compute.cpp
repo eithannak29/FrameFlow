@@ -100,13 +100,24 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     ImageView<rgb8>* cpy = copyImage(in);
 
+    std::cout << "Processing frame" << std::endl;
     auto [match_distance, distances] = background_estimation_process(*cpy);
+    std::cout << "filter" << std::endl;
     *cpy = applyFilter(*cpy, distances);
+    
     //in = applyFilterHeatmap(in, distances);
+    std::cout << "morphologie" << std::endl;
     morphologicalOpening(*cpy, 3);
+    std::cout << "mask" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(*cpy);
+    std::cout << "apply mask" << std::endl;
 
     in = applyRedMask(in, mask);
+    std::cout << "end" << std::endl;
+
+    delete cpy->buffer;
+    delete cpy;
+    std::cout << "delete all" << std::endl;
   }
 }
 
