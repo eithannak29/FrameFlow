@@ -21,6 +21,7 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
+bool swapped = false;
 
 template <typename T>
 void mySwap(T& a, T& b) {
@@ -55,23 +56,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
     else{
       mySwap(bg_value, candidate_value);
       time_since_match = 0;
-
-      for (int y = 0; y < candidate_value.height; y++) {
-        for (int x = 0; x < candidate_value.width; x++) {
-          int index = y * candidate_value.width + x;
-          candidate_value.buffer[index] = {0, 0, 0}; // Black color
-        }
-      }
-
-      // Also ensure bg_value is set to black where needed
-      for (int y = 0; y < bg_value.height; y++) {
-        for (int x = 0; x < bg_value.width; x++) {
-          int index = y * bg_value.width + x;
-          if (bg_value.buffer[index].r != 0 || bg_value.buffer[index].g != 0 || bg_value.buffer[index].b != 0) {
-            bg_value.buffer[index] = {0, 0, 0};  // Set non-black pixels to black
-          }
-        }
-      }
+      swapped = true;
     }
   }
   // std::cout << "Background match distance: " << match_distance << std::endl;
@@ -90,7 +75,8 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     // std::cout << "Background estimation" << std::endl;
     auto [match_distance, distances] = background_estimation_process(in);
-    in = applyFilter(in, distances);
+    in = applyFilter(in, distances, swapped);
+    swapped = false;
     //in = applyFilter(in, distance);
   }
   //in = applyFilter(in);

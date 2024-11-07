@@ -95,13 +95,18 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
+ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances, bool swapped) {
   const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
   const double strictDistanceThreshold = 0.3; //25.0;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
+      if (swapped){
+        int index = y * in.width + x;
+        bg_value.buffer[index] = {0,0,0};
+      }
+
       int index = y * in.width + x;
       rgb8 pixel = in.buffer[index];
       rgb8 bg_pixel = bg_value.buffer[index];
