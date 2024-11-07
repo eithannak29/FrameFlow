@@ -66,25 +66,25 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   return std::make_tuple(match_distance, distances);
 }
 
-ImageView<rgb8>* copyImage(const ImageView<rgb8>& src) {
-    // Allouer dynamiquement une nouvelle instance d'ImageView
-    ImageView<rgb8>* copy = new ImageView<rgb8>;
-    
-    // Initialiser les dimensions et le buffer
-    copy->buffer = new rgb8[src.width * src.height];
-    copy->width = src.width;
-    copy->height = src.height;
-    copy->stride = src.stride;
+template <class T>
+ImageView<T> copyImage(const ImageView<T>& src) {
+    ImageView<T> copy;
+    copy.width = src.width;
+    copy.height = src.height;
+    copy.stride = src.stride;
 
-    // Copier les données pixel par pixel
+    // Allouer un nouveau buffer pour le copy
+    copy.buffer = new T[src.width * src.height];
+
+    std::cout << "witdh" << copy->width << " height" << copy->height << " stride" << std::endl;
+
+    // Copier chaque élément
     for (int y = 0; y < src.height; y++) {
         for (int x = 0; x < src.width; x++) {
             int index = y * src.width + x;
-            copy->buffer[index] = src.buffer[index];  // Copier chaque pixel
+            copy.buffer[index] = src.buffer[index];
         }
     }
-    
-    // Retourner le pointeur vers la copie
     return copy;
 }
 
