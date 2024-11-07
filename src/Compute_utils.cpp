@@ -97,7 +97,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 
 ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
   const double adaptationRate = 0.1;  // Increase adaptation rate to adapt background faster
-  const double strictDistanceThreshold = 0.3; //25.0;  // Stricter threshold to identify background
+  const double strictDistanceThreshold = 0.25; //25.0;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
 
   for (int y = 0; y < in.height; y++) {
@@ -109,13 +109,8 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
 
       int index = y * in.width + x;
       rgb8 pixel = in.buffer[index];
-      rgb8 bg_pixel = bg_value.buffer[index];
+      //rgb8 bg_pixel = bg_value.buffer[index];
 
-      // Calculate color distance between current pixel and background model
-      // int dr = pixel.r - bg_pixel.r;
-      // int dg = pixel.g - bg_pixel.g;
-      // int db = pixel.b - bg_pixel.b;
-      // double distance = std::sqrt(dr * dr + dg * dg + db * db);
       double distance = distances[index];
       //std::cout << "Distance: " << distance << ", index: " << index << std::endl ;
 
@@ -124,14 +119,10 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
         // Mark as background if within threshold
         in.buffer[index] = {0, 0, 0};
         
-        // Update background model with higher adaptation rate for fast adaptation
-        // bg_value.buffer[index].r = static_cast<uint8_t>(bg_pixel.r * (1 - adaptationRate) + pixel.r * adaptationRate);
-        // bg_value.buffer[index].g = static_cast<uint8_t>(bg_pixel.g * (1 - adaptationRate) + pixel.g * adaptationRate);
-        // bg_value.buffer[index].b = static_cast<uint8_t>(bg_pixel.b * (1 - adaptationRate) + pixel.b * adaptationRate);
       } else {
         // For objects that differ significantly from the background, increase highlight intensity
         uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[index] = {intensity, intensity, 0};
+        in.buffer[index] = {0, intensity, intensity};
       }
     }
   }
