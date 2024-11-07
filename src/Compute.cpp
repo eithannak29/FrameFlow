@@ -116,8 +116,6 @@ void compute_cpp(ImageView<rgb8> in)
 
     delete[] cpy.buffer;
     delete[] mask.buffer;
-    delete cpy;
-    delete mask;
   }
 }
 
