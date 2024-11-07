@@ -100,6 +100,8 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
   const double strictDistanceThreshold = 0.25; //25.0;  // Stricter threshold to identify background
   const double highlightDistanceMultiplier = 2.8;  // Increase multiplier for highlight intensity
 
+  ImageView<rgb8> filtered = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       // if (swapped){
@@ -117,17 +119,17 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
       // Background adaptation and filtering
       if (distance < strictDistanceThreshold) {
         // Mark as background if within threshold
-        in.buffer[index] = {0, 0, 0};
+        filtered.buffer[index] = {0, 0, 0};
         
       } else {
         // For objects that differ significantly from the background, increase highlight intensity
         uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[index] = {0, intensity, intensity};
+        filtered.buffer[index] = {0, intensity, intensity};
       }
     }
   }
   
-  return in;
+  return filtered;
 }
 
 ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
@@ -153,7 +155,6 @@ ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>
   
   return in;
 }
-
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
 std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
