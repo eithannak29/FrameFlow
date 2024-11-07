@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <tuple>
+#include <algorithm>
 
 #define SQR(x) ((x)*(x))
 
