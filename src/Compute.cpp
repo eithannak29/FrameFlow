@@ -100,7 +100,6 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     ImageView<rgb8> cpy = copyImage(in);
 
-    std::cout << "Processing frame" << std::endl;
     auto [match_distance, distances] = background_estimation_process(cpy);
     std::cout << "filter" << std::endl;
     cpy = applyFilter(cpy, distances);

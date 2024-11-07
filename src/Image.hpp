@@ -19,14 +19,7 @@ struct ImageView
   int            width  = 0;
   int            height = 0;
   std::ptrdiff_t stride = 0;
-
-  ~ImageView() {
-        delete[] buffer;
-        buffer = nullptr;
-  };
 };
-
-
 
 
 // Class that owns data
