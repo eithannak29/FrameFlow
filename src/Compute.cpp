@@ -65,16 +65,19 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   return std::make_tuple(match_distance, distances);
 }
 
-ImageView<rgb8> copyImageMalloc(const ImageView<rgb8>& src) {
-    // Créer une nouvelle ImageView
+ImageView<rgb8> copyImage(const ImageView<rgb8>& src) {
     ImageView<rgb8> copy;
-    copy.buffer = static_cast<rgb8*>(malloc(src.width * src.height * sizeof(rgb8)));
+    copy.buffer = new rgb8[src.width * src.height];
     copy.width = src.width;
     copy.height = src.height;
     copy.stride = src.stride;
 
-    // Copier les données pixel par pixel
-    std::copy(src.buffer, src.buffer + (src.width * src.height), copy.buffer);
+    for (int y = 0; y < src.height; y++) {
+        for (int x = 0; x < src.width; x++) {
+            int index = y * src.width + x;
+            copy.buffer[index] = src.buffer[index];
+        }
+    }
 
     return copy;
 }
