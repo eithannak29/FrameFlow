@@ -110,13 +110,14 @@ void compute_cpp(ImageView<rgb8> in)
   else{
     ImageView<rgb8> cpy = copyImage(in);
 
-    auto [match_distance, distances] = background_estimation_process(in);
-    in = applyFilter(in, distances);
+    //auto [match_distance, distances] = background_estimation_process(in);
+    //in = applyFilter(in, distances);
     //in = applyFilterHeatmap(in, distances);
-    morphologicalOpening(in, 3);
-    ImageView<rgb8> mask = HysteresisThreshold(in);
+    //morphologicalOpening(in, 3);
+    //ImageView<rgb8> mask = HysteresisThreshold(in);
 
-    in = applyRedMask(cpy, mask);
+    //in = applyRedMask(cpy, mask);
+    in = cpy;
   }
   //in = applyFilter(in);
 
