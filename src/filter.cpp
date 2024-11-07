@@ -140,7 +140,9 @@ ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, st
       int index = y * in.width + x;
 
       if (mask.buffer[index].r > 0) {
-        in.buffer[index].r = std::min(255, static_cast<int>(in.buffer[index].r + 0.5 * 255));
+        in.buffer[index].r = std::min(255, static_cast<int>(initialPixels[index].r + 0.5 * 255));
+        in.buffer[index].g = initialPixels[index].g;
+        in.buffer[index].b = initialPixels[index].b;
       }
       else {
         in.buffer[index] = initialPixels[index];
