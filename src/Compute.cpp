@@ -76,7 +76,7 @@ ImageView<T> copyImage(const ImageView<T>& src) {
     // Allouer un nouveau buffer pour le copy
     copy.buffer = new T[src.width * src.height];
 
-    std::cout << "witdh" << copy.width << " height" << copy.height << std::endl;
+    std::cout << "witdh" << copy.width << " height" << copy.height << " stride " << copy.stride << std::endl;
 
     // Copier chaque élément
     for (int y = 0; y < src.height; y++) {
@@ -114,10 +114,6 @@ void compute_cpp(ImageView<rgb8> in)
 
     in = applyRedMask(in, mask);
     std::cout << "end" << std::endl;
-
-    delete[] cpy->buffer;
-    delete cpy;
-    std::cout << "delete all" << std::endl;
   }
 }
 
