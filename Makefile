@@ -1,9 +1,10 @@
 # Paths and configurations
 builddir := build
 outputdir := outputs
-outputfile := $(outputdir)/output.mp4
+outputfile := $(outputdir)/out.mp4
 mode := cpu
 build_type := Debug
+default_video := samples/ACET.mp4
 
 # Target to configure the project with CMake
 .PHONY: configure
@@ -20,12 +21,12 @@ build: configure
 # Target to run the project
 .PHONY: run
 run: build | $(outputdir)
-	@if [ -z "$(input_video)" ]; then \
-	    echo "Error: please specify the input file with 'make run input_video=path/to/video.mp4'"; \
-	    exit 1; \
-	fi
-	@echo "Running with input video $(input_video)..."
-	$(builddir)/stream --mode=$(mode) $(input_video) --output=$(outputfile)
+	@input_file=$(input_video); \
+	if [ -z "$$input_file" ]; then \
+	    input_file=$(default_video); \
+	fi; \
+	echo "Running with input video $$input_file..."; \
+	$(builddir)/stream --mode=$(mode) $$input_file --output=$(outputfile)
 
 # Create the outputs directory if it doesn’t exist
 $(outputdir):

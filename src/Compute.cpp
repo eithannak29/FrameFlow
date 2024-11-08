@@ -19,7 +19,24 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
+const int FRAMES_ACET = 268;
+int frame_counter = 0;
 
+
+void show_progress(int current, int total) {
+    int barWidth = 50;
+    float progress = (float)current / total;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
 
 // Function to initialize the background model
 int background_estimation_process(ImageView<rgb8> in) {
@@ -87,6 +104,8 @@ int background_estimation_process(ImageView<rgb8> in) {
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
+  show_progress(frame_counter, FRAMES_ACET);
+  frame_counter++;
   if (!initialized)
   {
     // std::cout << "Initialized Background" << std::endl;
