@@ -15,23 +15,22 @@ void erode(ImageView<rgb8>& image, int radius) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool erosion = false;
             rgb8& pixel = image.buffer[y * image.stride + x];
-            if(pixel.r == 0){
-                continue;
+            if (pixel.r < 10 && pixel.b > 240) {
+                continue; // Représente les pixels "bleus" faibles
             }
             for (int ky = 0; !erosion && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
                     rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.r == 0) {
-                        erosion = true;                        
+                    if (kernel_pixel.r < 10 && kernel_pixel.b > 240) { 
+                        erosion = true;
                     }
                 }
             }
             if (erosion) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.r = 0;
-                pixel.b = pixel.g;
+                pixel = {0, 0, 0};
             }
         }
         image = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -47,23 +46,22 @@ void dilate(ImageView<rgb8>& image, int radius) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool dilatation = false;
             rgb8& pixel = image.buffer[y * image.stride + x];
-            if(pixel.b == 0){
-                continue;
+            if (pixel.r < 240) { // Seuil pour intensité "rouge"
+                continue; // Ne pas dilater les pixels de faible intensité
             }
             for (int ky = 0; !dilatation && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
                     rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.b == 0) {
-                        dilatation = true;                        
+                    if (kernel_pixel.r >= 240) {
+                        dilatation = true;
                     }
                 }
             }
             if (dilatation) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.r = pixel.g;
-                pixel.b = 0;
+                pixel = {255, 0, 0};
             }
         }
     }

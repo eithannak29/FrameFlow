@@ -77,7 +77,6 @@ std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-
   static std::vector<rgb8> initialPixels;
 
   if (!initialized)
