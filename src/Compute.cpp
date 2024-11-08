@@ -23,7 +23,7 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
-const int FRAMES_ACET = 268;
+const int FRAMES_ACET = 603; //268;
 int frame_counter = 0;
 
 void show_progress(int current, int total) {

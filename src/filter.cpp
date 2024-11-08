@@ -10,26 +10,43 @@
 void erode(ImageView<rgb8>& image, int radius) {
     ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
-
+    // std::cout << image.stride << "height " << image.height << "width" << image.width << std::endl;
     for (int y = radius; y < image.height - radius; ++y) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool erosion = false;
-            rgb8& pixel = image.buffer[y * image.stride + x];
+            // std::cout << "before pixel" << std::endl;
+            // std::cout << "before pixel" << std::endl;
+            //if (y   <0 || y  >= image.height || x < 0 || x >= image.width){
+            // if (y * image.stride + x >= image.height * image.width){
+            // std::cout << "Index out of bounds : (y: " << y << ", x: " << x << ")" << std::endl;
+            //}
+            rgb8& pixel = image.buffer[y * image.width + x];
+            
+            //std::cout << "x: " << x << " y: " << y << " aled:" << (image.width * y + x) << std::endl;
             if(pixel.r == 0){
+    
+                // std::cout << "pixel is activated" << std::endl;
                 continue;
             }
+            // std::cout << "pixel is activated" << std::endl;
             for (int ky = 0; !erosion && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
+
+                    // std::cout << "pixel kernel" << std::endl;
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
-                    rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
+                    
+                    rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
                     if (kernel_pixel.r == 0) {
                         erosion = true;                        
                     }
                 }
             }
+            // std::cout << "passez la boucle" << std::endl;
             if (erosion) {
-                rgb8& pixel = copy.buffer[y * copy.stride + x];
+
+                //std::cout << "(y: " << y << ", x: " << x << ")" << std::endl;
+                rgb8& pixel = copy.buffer[y * copy.width + x];
                 pixel.r = 0;
                 pixel.b = pixel.g;
             }
@@ -46,7 +63,7 @@ void dilate(ImageView<rgb8>& image, int radius) {
     for (int y = radius; y < image.height - radius; ++y) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool dilatation = false;
-            rgb8& pixel = image.buffer[y * image.stride + x];
+            rgb8& pixel = image.buffer[y * image.width + x];
             if(pixel.b == 0){
                 continue;
             }
@@ -54,14 +71,14 @@ void dilate(ImageView<rgb8>& image, int radius) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
-                    rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
+                    rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
                     if (kernel_pixel.b == 0) {
                         dilatation = true;                        
                     }
                 }
             }
             if (dilatation) {
-                rgb8& pixel = copy.buffer[y * copy.stride + x];
+                rgb8& pixel = copy.buffer[y * copy.width + x];
                 pixel.r = pixel.g;
                 pixel.b = 0;
             }
@@ -76,7 +93,7 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
     // std::cout << "start morphologie"  << std::endl;
     // Étape 1 : Erosion
     erode(image,  radius);
-
+    // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
     dilate(image, radius);
 }
