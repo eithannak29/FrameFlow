@@ -135,8 +135,8 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
 // }
 
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 45; 
-  const int highThreshold = 100;
+  const int lowThreshold = 20; 
+  const int highThreshold = 45;
 
   // Créer une queue pour propager les pixels de bord fort
   std::queue<std::pair<int, int>> edgeQueue;
