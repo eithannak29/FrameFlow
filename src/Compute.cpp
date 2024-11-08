@@ -77,7 +77,6 @@ std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-  static std::vector<rgb8> initialPixels;
 
   if (!initialized)
   {
@@ -86,7 +85,7 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
+    std::vector<rgb8> initialPixels; = saveInitialBuffer(in.buffer, in.width, in.height);
 
     auto [match_distance, distances] = background_estimation_process(in);
     //std::cout << "filter" << std::endl;
