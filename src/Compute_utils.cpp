@@ -128,34 +128,34 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
   return in;
 }
 
-ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
-  // Calcul de la distance maximale
-  double maxDistance = *std::max_element(distances.begin(), distances.end());
+// ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
+//   // Calcul de la distance maximale
+//   double maxDistance = *std::max_element(distances.begin(), distances.end());
 
-  // Gestion du cas où maxDistance est très faible pour éviter la division par zéro
-  if (maxDistance < 1e-5) {
-    maxDistance = 1e-5;
-  }
+//   // Gestion du cas où maxDistance est très faible pour éviter la division par zéro
+//   if (maxDistance < 1e-5) {
+//     maxDistance = 1e-5;
+//   }
   
-  for (int y = 0; y < in.height; y++) {
-    for (int x = 0; x < in.width; x++) {
-      int index = y * in.width + x;
-      double distance = distances[index];
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       double distance = distances[index];
       
-      // Normalisation de la distance pour un affichage en heatmap
-      double normalizedDistance = distance / maxDistance;
+//       // Normalisation de la distance pour un affichage en heatmap
+//       double normalizedDistance = distance / maxDistance;
       
-      // Calcul des composantes couleur (bleu -> rouge)
-      uint8_t red = static_cast<uint8_t>(255 * normalizedDistance);
-      uint8_t blue = static_cast<uint8_t>(255 * (1 - normalizedDistance));
+//       // Calcul des composantes couleur (bleu -> rouge)
+//       uint8_t red = static_cast<uint8_t>(255 * normalizedDistance);
+//       uint8_t blue = static_cast<uint8_t>(255 * (1 - normalizedDistance));
       
-      // Appliquer la couleur en heatmap
-      in.buffer[index] = {red, 0, blue}; 
-    }
-  }
+//       // Appliquer la couleur en heatmap
+//       in.buffer[index] = {red, 0, blue}; 
+//     }
+//   }
   
-  return in;
-}
+//   return in;
+// }
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
 std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {

@@ -10,5 +10,6 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius);
 void hysteresisThresholding(ImageView<rgb8>& in, const ImageView<rgb8>& bg, double lowThreshold, double highThreshold);
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in);
 ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels);
+ImageView<rgb8> HysteresisThresholdHeatmap(ImageView<rgb8> in);
 
 #endif // COLOR_UTILS_HPP

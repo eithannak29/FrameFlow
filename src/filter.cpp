@@ -15,22 +15,23 @@ void erode(ImageView<rgb8>& image, int radius) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool erosion = false;
             rgb8& pixel = image.buffer[y * image.stride + x];
-            if (pixel.r < 10 && pixel.b > 240) {
-                continue; // Représente les pixels "bleus" faibles
+            if(pixel.r == 0){
+                continue;
             }
             for (int ky = 0; !erosion && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
                     rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.r < 10 && kernel_pixel.b > 240) { 
-                        erosion = true;
+                    if (kernel_pixel.r == 0) {
+                        erosion = true;                        
                     }
                 }
             }
             if (erosion) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel = {0, 0, 0};
+                pixel.r = 0;
+                pixel.b = pixel.g;
             }
         }
         image = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -46,22 +47,23 @@ void dilate(ImageView<rgb8>& image, int radius) {
         for (int x = radius; x < image.width - radius; ++x) {
             bool dilatation = false;
             rgb8& pixel = image.buffer[y * image.stride + x];
-            if (pixel.r < 240) { // Seuil pour intensité "rouge"
-                continue; // Ne pas dilater les pixels de faible intensité
+            if(pixel.b == 0){
+                continue;
             }
             for (int ky = 0; !dilatation && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
                     rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.r >= 240) {
-                        dilatation = true;
+                    if (kernel_pixel.b == 0) {
+                        dilatation = true;                        
                     }
                 }
             }
             if (dilatation) {
                 rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel = {255, 0, 0};
+                pixel.r = pixel.g;
+                pixel.b = 0;
             }
         }
     }
@@ -81,8 +83,8 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
 
 // seuillage d'hystérésis
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 25; 
-  const int highThreshold = 65;
+  const int lowThreshold = 45; 
+  const int highThreshold = 80;
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
