@@ -6,8 +6,24 @@
 #include <algorithm>
 #include <queue>
 
+std::vector<std::vector<int>> createDiskKernel(int radius) {
+    int diameter = 2 * radius + 1;
+    std::vector<std::vector<int>> kernel(diameter, std::vector<int>(diameter, 0));
+    int center = radius;
+    
+    for (int i = 0; i < diameter; ++i) {
+        for (int j = 0; j < diameter; ++j) {
+            if (std::sqrt((i - center) * (i - center) + (j - center) * (j - center)) <= radius) {
+                kernel[i][j] = 1;
+            }
+        }
+    }
+    return kernel;
+}
+
+
 // Appliquer une opération d'érosion
-void erode(ImageView<rgb8>& image, int radius) {
+void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, int radius) {
     ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     // std::cout << image.stride << "height " << image.height << "width" << image.width << std::endl;
@@ -33,12 +49,14 @@ void erode(ImageView<rgb8>& image, int radius) {
                 for (int kx = 0; kx < diameter; ++kx) {
 
                     // std::cout << "pixel kernel" << std::endl;
-                    int ny = y + ky - radius;
-                    int nx = x + kx - radius;
+                    if (kernel[ky][kx] == 1) {
+                        int ny = y + ky - radius;
+                        int nx = x + kx - radius;
                     
-                    rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                    if (kernel_pixel.r == 0) {
-                        erosion = true;                        
+                        rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
+                        if (kernel_pixel.r == 0) {
+                            erosion = true;                        
+                        }
                     }
                 }
             }
@@ -57,7 +75,7 @@ void erode(ImageView<rgb8>& image, int radius) {
 }
 
 // Appliquer une opération de dilatation
-void dilate(ImageView<rgb8>& image, int radius) {
+void dilate(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, int radius) {
     ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     rgb8& intensity = image.buffer[0];
@@ -70,12 +88,14 @@ void dilate(ImageView<rgb8>& image, int radius) {
             }
             for (int ky = 0; !dilatation && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
-                    int ny = y + ky - radius;
-                    int nx = x + kx - radius;
-                    rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                    if (kernel_pixel.r != 0) {
-                        dilatation = true;
-                        intensity = kernel_pixel;
+                    if (kernel[ky][kx] == 1){
+                        int ny = y + ky - radius;
+                        int nx = x + kx - radius;
+                        rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
+                        if (kernel_pixel.r != 0) {
+                            dilatation = true;
+                            intensity = kernel_pixel;
+                        }
                     }
                 }
             }
@@ -94,11 +114,16 @@ void dilate(ImageView<rgb8>& image, int radius) {
 // Ouverture morphologique (érosion suivie de dilatation)
 void morphologicalOpening(ImageView<rgb8>& image, int radius) {
     // std::cout << "start morphologie"  << std::endl;
+    int min_dimension = std::min(image.width, image.height);
+    int radius = std::max(3, (min_dimension / 100) * 5); // Rayon ajusté à 1% de la taille avec un minimum de 3
+
+    // Créer un noyau en forme de disque avec le rayon calculé
+    auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
     // erode(image,  radius);
     // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
-    dilate(image, radius);
+    dilate(image, diskKernel, radius);
 }
 
 // // seuillage d'hystérésis
