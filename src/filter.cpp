@@ -81,57 +81,147 @@ void morphologicalOpening(ImageView<rgb8>& image, int radius) {
     dilate(image, radius);
 }
 
-// Appliquer une hystérésis pour conserver les bords forts et ceux connectés
-void hysteresis(ImageView<rgb8>& image, int lowThreshold, int highThreshold) {
-    int width = image.width;
-    int height = image.height;
-    std::vector<bool> visited(width * height, false); // Pour éviter les doublons
-    std::queue<std::pair<int, int>> edgePixels; // Pixels candidats pour la propagation
+// // seuillage d'hystérésis
+// ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+//   const int lowThreshold = 10; 
+//   const int highThreshold = 65;
 
-    // Parcourir l'image et appliquer le seuil élevé pour détecter les bords forts
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int index = y * image.stride + x;
-            rgb8& pixel = image.buffer[index];
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       rgb8 pixel = in.buffer[index];
 
-            // Si le pixel est un bord fort
-            if (pixel.r > highThreshold && !visited[index]) {
-                edgePixels.push({x, y});
-                visited[index] = true;
-            } else if (pixel.r < lowThreshold) {
-                // Pixels en dessous du seuil bas sont supprimés
-                pixel.r = 0;
-                pixel.g = 0;
-                pixel.b = 0;
-            }
-        }
+//       int intensity = (pixel.r + pixel.g + pixel.b) / 3;
+
+//       if (intensity >= highThreshold) {
+//         in.buffer[index] = {255, 255, 255};
+//       } 
+//       else if (intensity >= lowThreshold) {
+//         bool connectedToStrongEdge = false;
+
+//         for (int dy = -1; dy <= 1; dy++) {
+//           for (int dx = -1; dx <= 1; dx++) {
+//             if (dy == 0 && dx == 0) continue; // Ignore le pixel actuel
+//             int neighborX = x + dx;
+//             int neighborY = y + dy;
+
+//             if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+//               int neighborIndex = neighborY * in.width + neighborX;
+//               rgb8 neighborPixel = in.buffer[neighborIndex];
+//               int neighborIntensity = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
+
+//               if (neighborIntensity >= highThreshold) {
+//                 connectedToStrongEdge = true;
+//                 break;
+//               }
+//             }
+//           }
+//           if (connectedToStrongEdge) break;
+//         }
+
+//         if (connectedToStrongEdge) {
+//           in.buffer[index] = {255, 255, 255};
+//         } else {
+//           in.buffer[index] = {0, 0, 0};
+//         }
+//       } 
+//       else {
+//         in.buffer[index] = {0, 0, 0};
+//       }
+//     }
+//   }
+
+//   return in;
+// }
+
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+  const int lowThreshold = 10; 
+  const int highThreshold = 35;
+
+  // Créer une queue pour propager les pixels de bord fort
+  std::queue<std::pair<int, int>> edgeQueue;
+
+  // Initialisation : marquer les bords forts et ajouter les pixels forts dans la queue
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8 pixel = in.buffer[index];
+      int intensity = (pixel.r + pixel.g + pixel.b) / 3;
+
+      if (intensity >= highThreshold) {
+        // Marque le pixel comme bord fort (blanc) et l'ajoute dans la queue
+        in.buffer[index] = {255, 255, 255};
+        edgeQueue.push({x, y});
+      } else if (intensity < lowThreshold) {
+        // Marque les pixels en dessous du seuil bas comme arrière-plan (noir)
+        in.buffer[index] = {0, 0, 0};
+      } else {
+        // Les pixels entre les seuils sont des candidats potentiels (gris)
+        in.buffer[index] = {127, 127, 127};
+      }
     }
+  }
 
-    // Propagation des bords faibles connectés aux bords forts
-    std::vector<std::pair<int, int>> directions = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-    while (!edgePixels.empty()) {
-        auto [x, y] = edgePixels.front();
-        edgePixels.pop();
+  // Propagation des bords forts vers les pixels adjacents en fonction du seuil bas
+  while (!edgeQueue.empty()) {
+    auto [x, y] = edgeQueue.front();
+    edgeQueue.pop();
 
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
+    // Parcours des pixels voisins
+    for (int dy = -1; dy <= 1; dy++) {
+      for (int dx = -1; dx <= 1; dx++) {
+        if (dx == 0 && dy == 0) continue;
 
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                int nIndex = ny * image.stride + nx;
-                rgb8& neighborPixel = image.buffer[nIndex];
+        int neighborX = x + dx;
+        int neighborY = y + dy;
 
-                // Vérifie si le voisin est un bord faible et non visité
-                if (neighborPixel.r >= lowThreshold && !visited[nIndex]) {
-                    visited[nIndex] = true;
-                    edgePixels.push({nx, ny});
-                } else if (neighborPixel.r < lowThreshold) {
-                    // Supprime les pixels en dessous du seuil bas
-                    neighborPixel.r = 0;
-                    neighborPixel.g = 0;
-                    neighborPixel.b = 0;
-                }
-            }
+        if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+          int neighborIndex = neighborY * in.width + neighborX;
+          rgb8& neighborPixel = in.buffer[neighborIndex];
+
+          int neighborIntensity = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
+
+          // Si le pixel voisin est entre les seuils et qu'il n'est pas déjà marqué comme bord fort
+          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
+            // Marque le pixel comme bord fort et l'ajoute dans la queue pour continuer la propagation
+            neighborPixel = {255, 255, 255};
+            edgeQueue.push({neighborX, neighborY});
+          }
         }
+      }
     }
+  }
+
+  // Finalise l'image : tous les pixels gris (127, 127, 127) restants deviennent arrière-plan (noir)
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8& pixel = in.buffer[index];
+
+      if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
+        pixel = {0, 0, 0};
+      }
+    }
+  }
+
+  return in;
+}
+
+ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels) {
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+
+      if (mask.buffer[index].r > 0) {
+        in.buffer[index].r = std::min(255, static_cast<int>(initialPixels[index].r + 0.5 * 255));
+        in.buffer[index].g = initialPixels[index].g;
+        in.buffer[index].b = initialPixels[index].b;
+      }
+      else {
+        in.buffer[index] = initialPixels[index];
+      }
+    }
+  }
+
+  return in;
 }

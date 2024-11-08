@@ -3,6 +3,10 @@
 
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <tuple>
+#include <algorithm>
+#include <cstdlib>
 
 #define SQR(x) ((x)*(x))
 
@@ -92,44 +96,74 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-ImageView<rgb8> applyFilter(ImageView<rgb8> in) {
-  const double adaptationRate = 0.05;
+ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
+  //const double adaptationRate = 0.1;
+  const double strictDistanceThreshold = 0.25;
+  const double highlightDistanceMultiplier = 2.8; 
+
+  //ImageView<rgb8> filtered = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
-      rgb8 pixel = in.buffer[index];
-      rgb8 bg_pixel = bg_value.buffer[index];
+      //rgb8 pixel = in.buffer[index];
+      //rgb8 bg_pixel = bg_value.buffer[index];
 
-      // Calculer la distance de couleur entre le pixel et le fond
-      int dr = pixel.r - bg_pixel.r;
-      int dg = pixel.g - bg_pixel.g;
-      int db = pixel.b - bg_pixel.b;
-      double distance = std::sqrt(dr * dr + dg * dg + db * db);
-      uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * 2));
+      double distance = distances[index];
+      //std::cout << "Distance: " << distance << ", index: " << index << std::endl ;
 
-      // Appliquer un effet visuel en fonction de la distance
-      if (distance < 50) {
-        // Si la distance est faible, on met le pixel en fond
+      // Background adaptation and filtering
+      if (distance < strictDistanceThreshold) {
+        // Mark as background if within threshold
         in.buffer[index] = {0, 0, 0};
-
-        bg_pixel.r = static_cast<uint8_t>(bg_pixel.r * (1 - adaptationRate) + pixel.r * adaptationRate);
-        bg_pixel.g = static_cast<uint8_t>(bg_pixel.g * (1 - adaptationRate) + pixel.g * adaptationRate);
-        bg_pixel.b = static_cast<uint8_t>(bg_pixel.b * (1 - adaptationRate) + pixel.b * adaptationRate);
+        
       } else {
-        // Si la distance est élevée, on applique un effet de surbrillance
+        // For objects that differ significantly from the background, increase highlight intensity
+        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
         in.buffer[index] = {intensity, intensity, 0};
       }
     }
   }
+  
   return in;
 }
 
+// ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
+//   // Calcul de la distance maximale
+//   double maxDistance = *std::max_element(distances.begin(), distances.end());
+
+//   // Gestion du cas où maxDistance est très faible pour éviter la division par zéro
+//   if (maxDistance < 1e-5) {
+//     maxDistance = 1e-5;
+//   }
+  
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       double distance = distances[index];
+      
+//       // Normalisation de la distance pour un affichage en heatmap
+//       double normalizedDistance = distance / maxDistance;
+      
+//       // Calcul des composantes couleur (bleu -> rouge)
+//       uint8_t red = static_cast<uint8_t>(255 * normalizedDistance);
+//       uint8_t blue = static_cast<uint8_t>(255 * (1 - normalizedDistance));
+      
+//       // Appliquer la couleur en heatmap
+//       in.buffer[index] = {red, 0, blue}; 
+//     }
+//   }
+  
+//   return in;
+// }
 
 // Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
-double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
+std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
+    std::vector<double> distances;
+
     if (img1.width != img2.width || img1.height != img2.height) {
         std::cerr << "Erreur : les dimensions des images ne correspondent pas." << std::endl;
-        return -1.0;  // Retourne une valeur indicative d'erreur
+        return std::make_tuple(-1.0, distances);  // Retourne une valeur indicative d'erreur
     }
 
     double totalDistance = 0.0;
@@ -154,21 +188,24 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) 
             // Calculer la distance ΔE
             double distance = deltaE(lab1, lab2);
             totalDistance += distance;
+            distances.push_back(distance);
         }
     }
 
     double averageDistance = totalDistance / numPixels;
-    return averageDistance;
+    return std::make_tuple(averageDistance, distances);
 }
 
+void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
+  for (int y=0; y < img1.height; y++){
+    for (int x=0; x < img1.width; x++){
+      int index = y * img1.width + x * 3;
+      rgb8 pixel1 = img1.buffer[index];
+      rgb8 pixel2 = img2.buffer[index];
 
-void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2, double adaptationRate) {
-  for (int y = 0; y < img1.height; y++) {
-    for (int x = 0; x < img1.width; x++) {
-      int index = y * img1.width + x;
-      img1.buffer[index].r = static_cast<uint8_t>(img1.buffer[index].r * (1 - adaptationRate) + img2.buffer[index].r * adaptationRate);
-      img1.buffer[index].g = static_cast<uint8_t>(img1.buffer[index].g * (1 - adaptationRate) + img2.buffer[index].g * adaptationRate);
-      img1.buffer[index].b = static_cast<uint8_t>(img1.buffer[index].b * (1 - adaptationRate) + img2.buffer[index].b * adaptationRate);
+      pixel1.r = (pixel1.r + pixel2.r) / 2;
+      pixel1.g = (pixel1.g + pixel2.g) / 2;
+      pixel1.b = (pixel1.b + pixel2.b) / 2;
     }
   }
 }

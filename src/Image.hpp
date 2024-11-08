@@ -22,8 +22,6 @@ struct ImageView
 };
 
 
-
-
 // Class that owns data
 template <class T>
 struct Image : ImageView<T>
