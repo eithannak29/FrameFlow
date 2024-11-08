@@ -94,7 +94,7 @@ void compute_cpp(ImageView<rgb8> in)
     //in = applyFilterHeatmap(in, distances);
     
     //std::cout << "morphologie" << std::endl;
-    morphologicalOpening(in, 5);
+    morphologicalOpening(in, 3);
     //std::cout << "mask" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(in);
     //std::cout << "apply mask" << std::endl;
