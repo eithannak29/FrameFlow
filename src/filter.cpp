@@ -112,18 +112,18 @@ void dilate(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel,
 }
 
 // Ouverture morphologique (érosion suivie de dilatation)
-void morphologicalOpening(ImageView<rgb8>& image, int radius) {
+void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // std::cout << "start morphologie"  << std::endl;
-    int min_dimension = std::min(image.width, image.height);
-    int radius = std::max(3, (min_dimension / 100) * 5); // Rayon ajusté à 1% de la taille avec un minimum de 3
+    int min_dimension = std::min(in.width, in.height);
+    int radius = std::max(minradius, (min_dimension / 100) * 5); // Rayon ajusté à 1% de la taille avec un minimum de 3
 
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
-    // erode(image,  radius);
+    // erode(in,  radius);
     // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
-    dilate(image, diskKernel, radius);
+    dilate(in, diskKernel, radius);
 }
 
 // // seuillage d'hystérésis
