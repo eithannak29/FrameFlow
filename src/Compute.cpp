@@ -2,10 +2,6 @@
 #include "Compute_utils.hpp"
 #include "Image.hpp"
 #include "filter.hpp"
-#include <tuple>
-#include <vector>
-#include <cstdlib>
-#include <cstring> // Pour std::memcpy
 
 #include <iostream>
 
@@ -23,61 +19,93 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
+const int FRAMES_ACET = 268;
+int frame_counter = 0;
 
-template <typename T>
-void mySwap(T& a, T& b) {
-    T temp = a;
-    a = b;
-    b = temp;
+
+void show_progress(int current, int total) {
+    int barWidth = 50;
+    float progress = (float)current / total;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
 }
 
 // Function to initialize the background model
-std::tuple<double, std::vector<double>> background_estimation_process(ImageView<rgb8> in){
-  auto [match_distance, distances] = matchImagesLab(bg_value, in);
-  auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in); // distance entre le candidat et l'image actuelle, à voir
-  double treshold = 0.25;
+int background_estimation_process(ImageView<rgb8> in) {
+  static double recent_average_distance = 0.2; // Initialize with a base threshold
+  const double base_threshold = 0.2;
+  const double alpha = 0.05;
+  const double high_adaptation_rate = 0.1;
+  const double low_adaptation_rate = 0.05;
+  const double swap_threshold = 0.1;
+  const int stable_frame_threshold = 5;
+  static int confidence_counter = 0;
+  const int confidence_limit = 3;
+
+  double match_distance = matchImagesLab(bg_value, in);
   
-  if (match_distance < treshold){
-    average(bg_value, in);
+  // Update the adaptive threshold based on recent average distance
+  recent_average_distance = (1 - alpha) * recent_average_distance + alpha * match_distance;
+  double adaptive_threshold = base_threshold + alpha * recent_average_distance;
+  
+  // Adaptation rate based on stability
+  double adaptationRate = (time_since_match > stable_frame_threshold) ? high_adaptation_rate : low_adaptation_rate;
+
+  if (match_distance < adaptive_threshold) {
+    average(bg_value, in, adaptationRate);
     time_since_match = 0;
-  }
-  else{
-    if (time_since_match == 0){
-      for (int y=0; y < in.height; y++){
-        for (int x=0; x < in.width; x++){
+    confidence_counter = 0; // Reset confidence counter on stable background
+  } else {
+    if (time_since_match == 0) {
+      // Initialize candidate background with the current frame
+      for (int y = 0; y < in.height; y++) {
+        for (int x = 0; x < in.width; x++) {
           int index = y * in.width + x;
           candidate_value.buffer[index] = in.buffer[index];
         }
       }
       time_since_match++;
-    }
-    else if (time_since_match < 150){
-      average(candidate_value, in);
+    } else if (time_since_match < stable_frame_threshold) {
+      // Blend candidate background over several frames
+      average(candidate_value, in, adaptationRate);
       time_since_match++;
-    }
-    else{
-      if (match_distance_candidate < treshold){  // cas ou l'on veux changer de background, et que le mouvement n'est pas éfemère
-        mySwap(bg_value, candidate_value);
+    } else {
+      // Confidence check before swapping
+      if (matchImagesLab(candidate_value, bg_value) < swap_threshold) {
+        average(bg_value, candidate_value, adaptationRate);
+      } else if (confidence_counter >= confidence_limit) {
+        std::swap(bg_value, candidate_value);
         time_since_match = 0;
+        confidence_counter = 0;
+
+        // Clear candidate buffer
+        for (int y = 0; y < candidate_value.height; y++) {
+          for (int x = 0; x < candidate_value.width; x++) {
+            int index = y * candidate_value.width + x;
+            candidate_value.buffer[index] = {0, 0, 0};
+          }
+        }
+      } else {
+        confidence_counter++;
       }
     }
   }
-  // std::cout << "Background match distance: " << match_distance << std::endl;
-  return std::make_tuple(match_distance, distances);
-}
-
-template <class T>
-std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
-    int totalSize = width * height; // Nombre total de pixels
-    std::vector<T> pixelArray(totalSize); // Création du tableau avec la taille appropriée
-    std::copy(sourceBuffer, sourceBuffer + totalSize, pixelArray.begin()); // Copie des pixels
-    return pixelArray;
+  return match_distance;
 }
 
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-
+  show_progress(frame_counter, FRAMES_ACET);
+  frame_counter++;
   if (!initialized)
   {
     // std::cout << "Initialized Background" << std::endl;
@@ -85,23 +113,12 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
-
-    auto [match_distance, distances] = background_estimation_process(in);
-    //std::cout << "filter" << std::endl;
-    in = applyFilter(in, distances);
-    //in = applyFilterHeatmap(in, distances);
-    
-    //std::cout << "morphologie" << std::endl;
-    morphologicalOpening(in, 3);
-    //std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(in);
-    //std::cout << "apply mask" << std::endl;
-
-    in = applyRedMask(in, mask, initialPixels);
-    //std::cout << "end" << std::endl;
-
+    // std::cout << "Background estimation" << std::endl;
+    background_estimation_process(in);
   }
+  in = applyFilter(in);
+  morphologicalOpening(in, 3);
+  hysteresis(in, 50, 100);
 }
 
 extern "C" {
