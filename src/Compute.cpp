@@ -85,7 +85,7 @@ void compute_cpp(ImageView<rgb8> in)
     initialized = true;
   }
   else{
-    std::vector<rgb8> initialPixels; = saveInitialBuffer(in.buffer, in.width, in.height);
+    std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
     auto [match_distance, distances] = background_estimation_process(in);
     //std::cout << "filter" << std::endl;
