@@ -23,7 +23,7 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
-const int FRAMES_ACET = 268; //268 380 580;
+const int FRAMES_ACET = 580; //268 380 580;
 int frame_counter = 0;
 
 void show_progress(int current, int total) {
@@ -53,6 +53,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   auto [match_distance, distances] = matchImagesLab(bg_value, in);
   auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in); // distance entre le candidat et l'image actuelle, à voir
   double treshold = 0.25;
+  int max_time_since_match = 50;
   
   if (match_distance < treshold){
     average(bg_value, in);
@@ -68,7 +69,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       }
       time_since_match++;
     }
-    else if (time_since_match < 150){
+    else if (time_since_match < max_time_since_match){
       average(candidate_value, in);
       time_since_match++;
     }
