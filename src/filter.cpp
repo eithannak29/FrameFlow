@@ -60,7 +60,7 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
             pixel = copy.buffer[y * copy.width + x];
             pixel.r = min_pixel;
             // pixel.g = min_pixel;
-            pixel.b = min_pixel;
+            pixel.b = 0;
             }
         }
         image = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -90,7 +90,7 @@ void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, in
             pixel = copy.buffer[y * copy.width + x];
             pixel.r = max_pixel;
             pixel.g = max_pixel;
-            pixel.b = max_pixel;
+            pixel.b = 0;
         }
     }
     
