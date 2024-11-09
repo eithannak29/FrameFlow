@@ -57,7 +57,7 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
                     }
                 }
              //std::cout << "(y: " << y << ", x: " << x << ")" << std::endl;
-            rgb8& pixel = copy.buffer[y * copy.width + x];
+            pixel = copy.buffer[y * copy.width + x];
             pixel.r = min_pixel;
             // pixel.g = min_pixel;
             pixel.b = min_pixel;
@@ -77,7 +77,7 @@ void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, in
                 continue;
             }
             uint8_t max_pixel = 0;
-            for (int ky = 0; !dilatation && ky < diameter; ++ky) {
+            for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     if (kernel[ky][kx] == 1){
                         int ny = y + ky - radius;
@@ -87,7 +87,7 @@ void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, in
                     }
                 }
             }
-            rgb8& pixel = copy.buffer[y * copy.width + x];
+            pixel = copy.buffer[y * copy.width + x];
             pixel.r = max_pixel;
             pixel.g = max_pixel;
             pixel.b = max_pixel;
@@ -102,7 +102,6 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // std::cout << "start morphologie"  << std::endl;
     int min_dimension = std::min(in.width, in.height);
     int radius = std::max(minradius, (min_dimension / 100) * 5); // Rayon ajusté à 1% de la taille avec un minimum de 3
-    ImgaView<rgb8> copy = in;
 
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
@@ -110,7 +109,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // erode(in,  radius);
     // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
-    dilate(copy, in, diskKernel, radius);
+    dilate(in, diskKernel, radius);
 }
 
 // // seuillage d'hystérésis
