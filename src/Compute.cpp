@@ -1,5 +1,5 @@
 #include "Compute.hpp"
-#include "Compute_utils.hpp"
+#include "utils.hpp"
 #include "Image.hpp"
 #include "filter.hpp"
 #include <tuple>
@@ -23,7 +23,7 @@ ImageView<rgb8> bg_value;
 ImageView<rgb8> candidate_value;
 int time_since_match;
 bool initialized = false;
-const int FRAMES_ACET = 603; //268;
+const int FRAMES_ACET = 580; //268 380 580;
 int frame_counter = 0;
 
 void show_progress(int current, int total) {
@@ -53,6 +53,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
   auto [match_distance, distances] = matchImagesLab(bg_value, in);
   auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in); // distance entre le candidat et l'image actuelle, à voir
   double treshold = 0.25;
+  int max_time_since_match = 50;
   
   if (match_distance < treshold){
     average(bg_value, in);
@@ -68,7 +69,7 @@ std::tuple<double, std::vector<double>> background_estimation_process(ImageView<
       }
       time_since_match++;
     }
-    else if (time_since_match < 150){
+    else if (time_since_match < max_time_since_match){
       average(candidate_value, in);
       time_since_match++;
     }
@@ -114,7 +115,7 @@ void compute_cpp(ImageView<rgb8> in)
     //std::cout << "morphologie" << std::endl;
     morphologicalOpening(in, 3);
     //std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(in);
+    ImageView<rgb8> mask = HysteresisThreshold(in,10,35);
     //std::cout << "apply mask" << std::endl;
 
     in = applyRedMask(in, mask, initialPixels);

@@ -1,4 +1,4 @@
-#include "Compute_utils.hpp"
+#include "utils.hpp"
 #include "Image.hpp"
 
 #include <iostream>
