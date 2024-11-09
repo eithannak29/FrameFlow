@@ -1,5 +1,5 @@
 #include "Compute.hpp"
-#include "Compute_utils.hpp"
+#include "utils.hpp"
 #include "Image.hpp"
 #include "filter.hpp"
 #include <tuple>
@@ -115,7 +115,7 @@ void compute_cpp(ImageView<rgb8> in)
     //std::cout << "morphologie" << std::endl;
     morphologicalOpening(in, 3);
     //std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(in);
+    ImageView<rgb8> mask = HysteresisThreshold(in,10,35);
     //std::cout << "apply mask" << std::endl;
 
     in = applyRedMask(in, mask, initialPixels);

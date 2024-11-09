@@ -102,7 +102,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // std::cout << "start morphologie"  << std::endl;
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disl); 
+    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk); 
 
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
@@ -113,62 +113,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     dilate(in, diskKernel, radius);
 }
 
-// // seuillage d'hystérésis
-// ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-//   const int lowThreshold = 10; 
-//   const int highThreshold = 65;
-
-//   for (int y = 0; y < in.height; y++) {
-//     for (int x = 0; x < in.width; x++) {
-//       int index = y * in.width + x;
-//       rgb8 pixel = in.buffer[index];
-
-//       int intensity = (pixel.r + pixel.g + pixel.b) / 3;
-
-//       if (intensity >= highThreshold) {
-//         in.buffer[index] = {255, 255, 255};
-//       } 
-//       else if (intensity >= lowThreshold) {
-//         bool connectedToStrongEdge = false;
-
-//         for (int dy = -1; dy <= 1; dy++) {
-//           for (int dx = -1; dx <= 1; dx++) {
-//             if (dy == 0 && dx == 0) continue; // Ignore le pixel actuel
-//             int neighborX = x + dx;
-//             int neighborY = y + dy;
-
-//             if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
-//               int neighborIndex = neighborY * in.width + neighborX;
-//               rgb8 neighborPixel = in.buffer[neighborIndex];
-//               int neighborIntensity = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
-
-//               if (neighborIntensity >= highThreshold) {
-//                 connectedToStrongEdge = true;
-//                 break;
-//               }
-//             }
-//           }
-//           if (connectedToStrongEdge) break;
-//         }
-
-//         if (connectedToStrongEdge) {
-//           in.buffer[index] = {255, 255, 255};
-//         } else {
-//           in.buffer[index] = {0, 0, 0};
-//         }
-//       } 
-//       else {
-//         in.buffer[index] = {0, 0, 0};
-//       }
-//     }
-//   }
-
-//   return in;
-// }
-
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 10; 
-  const int highThreshold = 35;
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
 
   // Créer une queue pour propager les pixels de bord fort
   std::queue<std::pair<int, int>> edgeQueue;
