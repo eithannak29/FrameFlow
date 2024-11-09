@@ -102,7 +102,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // std::cout << "start morphologie"  << std::endl;
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disl); 
+    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk); 
 
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
