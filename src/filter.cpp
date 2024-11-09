@@ -29,7 +29,6 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
     // std::cout << image.stride << "height " << image.height << "width" << image.width << std::endl;
     for (int y = radius; y < image.height - radius; ++y) {
         for (int x = radius; x < image.width - radius; ++x) {
-            bool erosion = false;
             // std::cout << "before pixel" << std::endl;
             // std::cout << "before pixel" << std::endl;
             //if (y   <0 || y  >= image.height || x < 0 || x >= image.width){
@@ -37,15 +36,14 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
             // std::cout << "Index out of bounds : (y: " << y << ", x: " << x << ")" << std::endl;
             //}
             rgb8& pixel = image.buffer[y * image.width + x];
-            
             //std::cout << "x: " << x << " y: " << y << " aled:" << (image.width * y + x) << std::endl;
             if(pixel.r == 0){
-    
                 // std::cout << "pixel is activated" << std::endl;
                 continue;
             }
+            uint8_t min_pixel = 255;
             // std::cout << "pixel is activated" << std::endl;
-            for (int ky = 0; !erosion && ky < diameter; ++ky) {
+            for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
 
                     // std::cout << "pixel kernel" << std::endl;
@@ -54,61 +52,49 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
                         int nx = x + kx - radius;
                     
                         rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                        if (kernel_pixel.r == 0) {
-                            erosion = true;                        
+                        min_pixel = std::min(min_pixel, kernel_pixel.g);                      
                         }
                     }
                 }
-            }
-            // std::cout << "passez la boucle" << std::endl;
-            if (erosion) {
-
-                //std::cout << "(y: " << y << ", x: " << x << ")" << std::endl;
-                rgb8& pixel = copy.buffer[y * copy.width + x];
-                pixel.r = 0;
-                pixel.g = 0;
-                pixel.b = 0;
+             //std::cout << "(y: " << y << ", x: " << x << ")" << std::endl;
+            rgb8& pixel = copy.buffer[y * copy.width + x];
+            pixel.r = min_pixel;
+            // pixel.g = min_pixel;
+            pixel.b = min_pixel;
             }
         }
         image = copy;  // Appliquer la copie modifiée à l'image d'origine
     }
-}
 
 // Appliquer une opération de dilatation
-void dilate(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, int radius) {
-    ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
+void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, int radius) {
     int diameter = 2 * radius + 1;
-    rgb8& intensity = image.buffer[0];
-    for (int y = radius; y < image.height - radius; ++y) {
-        for (int x = radius; x < image.width - radius; ++x) {
-            bool dilatation = false;
-            rgb8& pixel = image.buffer[y * image.width + x];
+    ImageView<rgb8> copy = in;
+    for (int y = radius; y < in.height - radius; ++y) {
+        for (int x = radius; x < in.width - radius; ++x) {
+            rgb8& pixel = copy.buffer[y * in.width + x];
             if(pixel.r != 0){
                 continue;
             }
+            uint8_t max_pixel = 0;
             for (int ky = 0; !dilatation && ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     if (kernel[ky][kx] == 1){
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
-                        rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                        if (kernel_pixel.r != 0) {
-                            dilatation = true;
-                            intensity = kernel_pixel;
-                        }
+                        rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
+                        max_pixel = std::max(max_pixel, kernel_pixel.g);
                     }
                 }
             }
-            if (dilatation) {
-                rgb8& pixel = copy.buffer[y * copy.width + x];
-                pixel.r = intensity.r;
-                pixel.g = intensity.g;
-                // pixel.b = 0;
-            }
+            rgb8& pixel = copy.buffer[y * copy.width + x];
+            pixel.r = max_pixel;
+            pixel.g = max_pixel;
+            pixel.b = max_pixel;
         }
     }
     
-    image = copy;  // Appliquer la copie modifiée à l'image d'origine
+    in = copy;  // Appliquer la copie modifiée à l'image d'origine
 }
 
 // Ouverture morphologique (érosion suivie de dilatation)
@@ -116,6 +102,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // std::cout << "start morphologie"  << std::endl;
     int min_dimension = std::min(in.width, in.height);
     int radius = std::max(minradius, (min_dimension / 100) * 5); // Rayon ajusté à 1% de la taille avec un minimum de 3
+    ImgaView<rgb8> copy = in;
 
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
@@ -123,7 +110,7 @@ void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
     // erode(in,  radius);
     // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
-    dilate(in, diskKernel, radius);
+    dilate(copy, in, diskKernel, radius);
 }
 
 // // seuillage d'hystérésis
