@@ -1,5 +1,5 @@
-#ifndef COMPUTE_UTILS_HPP
-#define COMPUTE_UTILS_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include "Image.hpp"
 #include <vector>

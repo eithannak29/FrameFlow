@@ -1,5 +1,5 @@
 #include "Compute.hpp"
-#include "Compute_utils.hpp"
+#include "utils.hpp"
 #include "Image.hpp"
 #include "filter.hpp"
 #include <tuple>
