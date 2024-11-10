@@ -106,9 +106,9 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     int idx = y * in.width + x;
 
-    rgb8 bg_pixel = bg_value.buffer[idx];
-    rgb8 in_pixel = in.buffer[idx];
-    rgb8 candidate_pixel = candidate_value.buffer[idx];
+    rgb8 bg_pixel = bg_value.buffer[y * bg_value.stride + x];
+    rgb8 in_pixel = in.buffer[y * in.stride + x];
+    rgb8 candidate_pixel = candidate_value.buffer[y * candidate_value.stride + x];
 
     Lab lab_in = rgbToLabGPU(in_pixel);
     Lab lab_bg = rgbToLabGPU(bg_pixel);
@@ -122,40 +122,40 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
         bg_pixel.r = in_pixel.r;
         bg_pixel.g = in_pixel.g;
         bg_pixel.b = in_pixel.b;
-        bg_value.buffer[idx] = bg_pixel;
+        bg_value.buffer[y * bg_value.stride + x] = bg_pixel;
     } else {
         if (time == 0) {
             candidate_pixel.r = in_pixel.r;
             candidate_pixel.g = in_pixel.g;
             candidate_pixel.b = in_pixel.b;
-            candidate_value.buffer[idx] = {candidate_pixel.r, candidate_pixel.g, candidate_pixel.b};
+            candidate_value.buffer[y * candidate_value.stride + x] = {candidate_pixel.r, candidate_pixel.g, candidate_pixel.b};
             time ++;
         } else if (time < 100) {
             candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
             candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
             candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
-            candidate_value.buffer[idx] = candidate_pixel;
+            candidate_value.buffer[y * candidate_value.stride + x] = candidate_pixel;
             time++;
         } else {
             mySwapCuda(bg_pixel, candidate_pixel);
             bg_value.buffer[idx] = bg_pixel;
-            candidate_value.buffer[idx] = candidate_pixel;
+            candidate_value.buffer[y * candidate_value.stride + x] = candidate_pixel;
             time = 0;
         }
     }
-    // time_matrix[idx] = time;
+    time_matrix[idx] = time;
 
     // double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
     // int idx = y * in.width + x;
     // double distance = 0;
     if (distance < strictDistanceThreshold)
     {
-        in.buffer[idx] = {0, 0, 0};
+        in.buffer[y * in.stride + x] = {0, 0, 0};
     }
     else
     {
         uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[idx] = {intensity, intensity, 0};
+        in.buffer[y * in.stride + x] = {intensity, intensity, 0};
     }
     
 }
@@ -166,7 +166,7 @@ void compute_cu(ImageView<rgb8> in) {
     static bool initialized = false;
     static Image<rgb8> device_bg;
     static Image<rgb8> device_candidate;
-    int* time_matrix;
+    static int* time_matrix;
 
     // Define thresholds for smoother filtering
     const float min_threshold = 10.0f;
@@ -183,14 +183,14 @@ void compute_cu(ImageView<rgb8> in) {
     // CUDA_CHECK(cudaMalloc(&distances, in.width * in.height * sizeof(float)));
 
     // Copy input image to device
-    CUDA_CHECK(cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride,
-                            in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice));
+    cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
 
     if (!initialized) {
         // Initialize background and candidate images
-        CUDA_CHECK(cudaMemcpy(device_bg.buffer, device_in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice));
-        CUDA_CHECK(cudaMemcpy(device_candidate.buffer, device_in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice));
+        cudaMemcpy2D(device_bg.buffer, device_bg.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+        cudaMemcpy2D(device_candidate.buffer, device_candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
         CUDA_CHECK(cudaMalloc(&time_matrix, in.width * in.height * sizeof(int)));
+        CUDA_CHECK(cudaMemset(time_matrix, 0, in.width * in.height * sizeof(int)));
         initialized = true;
     }
 
@@ -202,24 +202,24 @@ void compute_cu(ImageView<rgb8> in) {
 
     std::cout << "before apply" << std::endl;
     applyFlow<<<grid, block>>>(device_in, device_bg, device_candidate, time_matrix);
-    err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
+    // err = cudaGetLastError();
+    // if (err != cudaSuccess) {
+    //     fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
+    //     exit(EXIT_FAILURE);
+    // }
 
     // Synchroniser le dispositif
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        fprintf(stderr, "Erreur lors de la synchronisation du dispositif : %s\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
+    // err = cudaDeviceSynchronize();
+    // if (err != cudaSuccess) {
+    //     fprintf(stderr, "Erreur lors de la synchronisation du dispositif : %s\n", cudaGetErrorString(err));
+    //     exit(EXIT_FAILURE);
+    // }
 
     // Copier le résultat vers l'hôte
     err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess) {
-        fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
+    // if (err != cudaSuccess) {
+    //     fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
+    //     exit(EXIT_FAILURE);
         
-    }
+    // }
 }
