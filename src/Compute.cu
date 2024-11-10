@@ -241,16 +241,8 @@ void compute_cu(ImageView<rgb8> in) {
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
 
-
-    std::cout << "before device in" << std::endl;
-    Image<rgb8> device_in(in.width, in.height, true);
-    err = cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-    if (err != cudaSuccess) {
-            fprintf(stderr, "Erreur d'allocation de device_in: %s\n", cudaGetErrorString(err));
-            exit(EXIT_FAILURE);
-        }
     std::cout << "before apply" << std::endl;
-    applyFlow<<<grid, block>>>(device_in, bg_value, candidate, time_matrix);
+    applyFlow<<<grid, block>>>(device_in, device_bg, device_candidate, time_matrix);
     err = cudaGetLastError();
     if (err != cudaSuccess) {
         fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
