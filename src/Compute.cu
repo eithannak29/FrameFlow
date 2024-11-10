@@ -91,58 +91,46 @@ __device__ double deltaECUDA(const Lab& lab1, const Lab& lab2) {
 //     // Copy the result back to the host
 //     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 // }
-__global__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, vector<int> time_matrix)
-{
+__device__ void back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < in.width && y < in.height)
-    {
-        rgb8* in_pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-        rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
-        rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate.buffer + y * candidate.stride);
+    if (x < in.width && y < in.height) {
+        rgb8* in_pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride) + x;
+        rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride) + x;
+        rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate.buffer + y * candidate.stride) + x;
 
         Lab lab_in = rgbToLabCUDA(*in_pixel);
         Lab lab_bg = rgbToLabCUDA(*bg_pixel);
 
         double distance = deltaECUDA(lab_in, lab_bg);
-        
         int time = time_matrix[y * in.width + x];
         bool match = distance < 25.0;
-        
-        if (match)
-        {
+
+        if (match) {
             time = 0;
             *bg_pixel = *in_pixel;
-        }
-        else
-        {
-            if (time = 0){
-                candidate_pixel.r = in_pixel.r;
-                candidate_pixel.g = in_pixel.g;
-                candidate_pixel.b = in_pixel.b;
+        } else {
+            if (time == 0) {
+                candidate_pixel->r = in_pixel->r;
+                candidate_pixel->g = in_pixel->g;
+                candidate_pixel->b = in_pixel->b;
                 time++;
-            }
-            else if(time < 100)
-            {
-                candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
-                candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
-                candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
+            } else if (time < 100) {
+                candidate_pixel->r = (candidate_pixel->r + in_pixel->r) / 2;
+                candidate_pixel->g = (candidate_pixel->g + in_pixel->g) / 2;
+                candidate_pixel->b = (candidate_pixel->b + in_pixel->b) / 2;
                 time++;
-            }
-            else
-            {
+            } else {
                 mySwapCuda(*bg_pixel, *candidate_pixel);
                 time = 0;
             }
         }
         time_matrix[y * in.width + x] = time;
-        return distance;
     }
-    return 0;
 }
 
-__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, vector<int> time_matrix)
+__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -169,40 +157,40 @@ void compute_cu(ImageView<rgb8> in )
 {
     static ImageView<rgb8> bg_value;
     static ImageView<rgb8> candidate;
-    vector<int> time_matrix;
+    int* time_matrix;
     if (bg_value.buffer == nullptr)
     {
         bg_value = ImageView<rgb8>(in.width, in.height, true);
         candidate = ImageView<rgb8>(in.width, in.height, true);
         rc = cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-        if (rc != cudaSuccess)
-        {
-            std::cerr << "Error copying bg to device: " << cudaGetErrorString(rc) << std::endl;
-            return;
-        }
+        // if (rc != cudaSuccess)
+        // {
+        //     std::cerr << "Error copying bg to device: " << cudaGetErrorString(rc) << std::endl;
+        //     return;
+        // }
         rc = cudaMemcpy2D(candidate.buffer, candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-        if (rc != cudaSuccess)
-        {
-            std::cerr << "Error copying candidate to device: " << cudaGetErrorString(rc) << std::endl;
-            return;
-        }
+        // if (rc != cudaSuccess)
+        // {
+        //     std::cerr << "Error copying candidate to device: " << cudaGetErrorString(rc) << std::endl;
+        //     return;
+        // }
         rc = cudaMalloc(&time_matrix, in.width * in.height * sizeof(int));
-        if (rc != cudaSuccess)
-        {
-            std::cerr << "Error allocating time_matrix on device: " << cudaGetErrorString(rc) << std::endl;
-            return;
-        }
+        // if (rc != cudaSuccess)
+        // {
+        //     std::cerr << "Error allocating time_matrix on device: " << cudaGetErrorString(rc) << std::endl;
+        //     return;
+        // }
     }
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
 
     Image<rgb8> device_in(in.width, in.height, true);
     rc = cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-    if (rc != cudaSuccess)
-    {
-        std::cerr << "Error copying in to device: " << cudaGetErrorString(rc) << std::endl;
-        return;
-    }
+    // if (rc != cudaSuccess)
+    // {
+    //     std::cerr << "Error copying in to device: " << cudaGetErrorString(rc) << std::endl;
+    //     return;
+    // }
     applyFlow<<<grid, block>>>(device_in, bg_value, candidate, time_matrix);
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 }
