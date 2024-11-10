@@ -71,11 +71,11 @@ __device__ double mymin(const double a, const double b){
 }
 
 
-__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix) {
+__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= width || y >= height) return;
+    if (x >= in.width || y >= in.height) return;
 
     int idx = y * in.width + x;
 
@@ -119,7 +119,7 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_
     time_matrix[y * in.width + x] = time;
 }
 
-__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix)
+__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -127,19 +127,19 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     const double strictDistanceThreshold = 0.25;
     const double highlightDistanceMultiplier = 2.8; 
 
-    if (x >= width || y >= height) return;
+    if (x >= in.width || y >= in.height) return;
 
-    double distance = back_ground_estimation(in, bg_value, candidate, time_matrix);
+    double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
     
     int idx = y * in.width + x;
     if (distance < strictDistanceThreshold)
     {
-        in_buffer[idx] = {0, 0, 0};
+        in.buffer[idx] = {0, 0, 0};
     }
     else
     {
         uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
-        in_buffer[idx] = {intensity, intensity, 0};
+        in.buffer[idx] = {intensity, intensity, 0};
     }
     
 }
