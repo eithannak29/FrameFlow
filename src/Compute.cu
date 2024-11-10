@@ -139,6 +139,7 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<uint8_t> bg_value, Image
 
 void compute_cu(ImageView<rgb8> in )
 {
+    cudaError_t err;
     static Image<uint8_t> bg_value;
     static Image<uint8_t> candidate;
     int* time_matrix;
@@ -199,4 +200,6 @@ void compute_cu(ImageView<rgb8> in )
     if (err != cudaSuccess) {
         fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
+        
+    }
 }
