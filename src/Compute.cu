@@ -76,9 +76,9 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<uint8_t> 
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x < in.width && y < in.height) {
-        rgb8* in_pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride) + x;
-        rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride) + x;
-        rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate.buffer + y * candidate.stride) + x;
+        rgb8* in_pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+        rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
+        rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate.buffer + y * candidate.stride);
 
         Lab lab_in = rgbToLabCUDA(*in_pixel);
         Lab lab_bg = rgbToLabCUDA(*bg_pixel);
