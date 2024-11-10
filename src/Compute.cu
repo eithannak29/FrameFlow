@@ -149,12 +149,12 @@ void compute_cu(ImageView<rgb8> in )
         std::cout << "init" << std::endl;
         bg_value = Image<uint8_t>(in.width, in.height, true);
         candidate = Image<uint8_t>(in.width, in.height, true);
-        err = cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+        err = cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.width, in.width, in.height, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             fprintf(stderr, "Erreur d'allocation de bg_value : %s\n", cudaGetErrorString(err));
             exit(EXIT_FAILURE);
         }
-        err = cudaMemcpy2D(candidate.buffer, candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+        err = cudaMemcpy2D(candidate.buffer, candidate.stride, in.buffer, in.width, in.width , in.height, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             fprintf(stderr, "Erreur d'allocation de canditate : %s\n", cudaGetErrorString(err));
             exit(EXIT_FAILURE);
@@ -191,8 +191,7 @@ void compute_cu(ImageView<rgb8> in )
     }
 
     // Copier le résultat vers l'hôte
-    err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride,
-                       in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
