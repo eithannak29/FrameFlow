@@ -106,9 +106,9 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     int idx = y * in.width + x;
 
-    rgb8 bg_pixel = bg_value.buffer[y * bg_value.stride + x];
-    rgb8 in_pixel = in.buffer[y * in.stride + x];
-    rgb8 candidate_pixel = candidate_value.buffer[y * candidate_value.stride + x];
+    rgb8* bg_pixel = (rgb8 *)((std::byte*)bg_value.buffer[y * bg_value.stride + x]);
+    rgb8 in_pixel = (rgb8 *)((std::byte*)in.buffer[y * in.stride + x]);
+    rgb8 candidate_pixel = (rgb8 *)((std::byte*)candidate_value.buffer[y * candidate_value.stride + x]);
 
     Lab lab_in = rgbToLabGPU(in_pixel);
     Lab lab_bg = rgbToLabGPU(bg_pixel);
@@ -119,27 +119,20 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     // int time = 0;
     if (match) {
         time = 0;
-        bg_pixel.r = in_pixel.r;
-        bg_pixel.g = in_pixel.g;
-        bg_pixel.b = in_pixel.b;
-        bg_value.buffer[y * bg_value.stride + x] = bg_pixel;
+        bg_pixel[x].r = (bg_pixel[x].r + in_pixel[x].r) / 2;
+        bg_pixel[x].g = (bg_pixel[x].g + in_pixel[x].g) / 2;
+        bg_pixel[x].b = (bg_pixel[x].b + in_pixel[x].b) / 2;
     } else {
         if (time == 0) {
-            candidate_pixel.r = in_pixel.r;
-            candidate_pixel.g = in_pixel.g;
-            candidate_pixel.b = in_pixel.b;
-            candidate_value.buffer[y * candidate_value.stride + x] = {candidate_pixel.r, candidate_pixel.g, candidate_pixel.b};
+            candidate_value[x] = in_pixel[x];
             time ++;
         } else if (time < 100) {
             candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
             candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
             candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
-            candidate_value.buffer[y * candidate_value.stride + x] = candidate_pixel;
             time++;
         } else {
-            mySwapCuda(bg_pixel, candidate_pixel);
-            bg_value.buffer[idx] = bg_pixel;
-            candidate_value.buffer[y * candidate_value.stride + x] = candidate_pixel;
+            mySwapCuda(bg_pixel[x], candidate_pixel[x]);
             time = 0;
         }
     }
@@ -150,12 +143,12 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     // double distance = 0;
     if (distance < strictDistanceThreshold)
     {
-        in.buffer[y * in.stride + x] = {0, 0, 0};
+        in_pixel[x] = {0, 0, 0};
     }
     else
     {
         uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[y * in.stride + x] = {intensity, intensity, 0};
+        in_pixel[x] = {intensity, intensity, 0};
     }
     
 }
