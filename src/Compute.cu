@@ -71,7 +71,7 @@ __device__ double mymin(const double a, const double b){
 }
 
 
-__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<uint8_t> bg_value, ImageView<uint8_t> candidate, int* time_matrix) {
+__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -110,7 +110,7 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<uint8_t> 
     }
 }
 
-__global__ void applyFlow(ImageView<rgb8> in, ImageView<uint8_t> bg_value, ImageView<uint8_t> candidate, int* time_matrix)
+__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -140,15 +140,15 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<uint8_t> bg_value, Image
 void compute_cu(ImageView<rgb8> in )
 {
     cudaError_t err;
-    static Image<uint8_t> bg_value;
-    static Image<uint8_t> candidate;
+    static Image<rgb8> bg_value;
+    static Image<rgb8> candidate;
     int* time_matrix;
     std::cout << "begininng" << std::endl;
     if (bg_value.buffer == nullptr)
     {
         std::cout << "init" << std::endl;
-        bg_value = Image<uint8_t>(in.width, in.height, true);
-        candidate = Image<uint8_t>(in.width, in.height, true);
+        bg_value = Image<rgb8>(in.width, in.height, true);
+        candidate = Image<rgb8>(in.width, in.height, true);
         err = cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.width, in.width, in.height, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             fprintf(stderr, "Erreur d'allocation de bg_value : %s\n", cudaGetErrorString(err));
