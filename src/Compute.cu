@@ -21,6 +21,12 @@ struct Lab {
     float b;
 };
 
+template <typename T>
+__device__ void mySwapCuda(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
 // Device functions for color space conversion and distance calculation
 __device__ float sRGBToLinearGPU(float c) {
     return (c <= 0.04045f) ? (c / 12.92f) : powf((c + 0.055f) / 1.055f, 2.4f);
@@ -144,10 +150,10 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_
     rgb8 in_pixel = in.buffer[idx];
     rgb8 candidate_pixel = candidate_value.buffer[idx];
 
-    Lab lab_in = rgbToLabCUDA(in_pixel);
-    Lab lab_bg = rgbToLabCUDA(bg_pixel);
+    Lab lab_in = rgbToLabGPU(in_pixel);
+    Lab lab_bg = rgbToLabGPU(bg_pixel);
 
-    double distance = deltaECUDA(lab_in, lab_bg);
+    double distance = deltaEGPU(lab_in, lab_bg);
     int time = time_matrix[y * in.width + x];
     bool match = distance < 25.0;
 
