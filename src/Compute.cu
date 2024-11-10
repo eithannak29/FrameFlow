@@ -207,10 +207,11 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
 
 void compute_cu(ImageView<rgb8> in) {
+    cudaError_t err;
     static bool initialized = false;
     static Image<rgb8> device_bg;
     static Image<rgb8> device_candidate;
-    static int time_since_match = 0;
+    int* time_matrix;
 
     // Define thresholds for smoother filtering
     const float min_threshold = 10.0f;
@@ -223,8 +224,8 @@ void compute_cu(ImageView<rgb8> in) {
         device_bg = Image<rgb8>(in.width, in.height, true);
         device_candidate = Image<rgb8>(in.width, in.height, true);
     }
-    float* distances;
-    CUDA_CHECK(cudaMalloc(&distances, in.width * in.height * sizeof(float)));
+    // float* distances;
+    // CUDA_CHECK(cudaMalloc(&distances, in.width * in.height * sizeof(float)));
 
     // Copy input image to device
     CUDA_CHECK(cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride,
@@ -234,6 +235,7 @@ void compute_cu(ImageView<rgb8> in) {
         // Initialize background and candidate images
         CUDA_CHECK(cudaMemcpy(device_bg.buffer, device_in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice));
         CUDA_CHECK(cudaMemcpy(device_candidate.buffer, device_in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice));
+        CUDA_CHECK(cudaMalloc(&time_matrix, in.width * in.height * sizeof(int)));
         initialized = true;
     }
 
