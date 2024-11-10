@@ -104,6 +104,8 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     if (x >= in.width || y >= in.height) return;
 
+    int idx = y * in.width + x;
+
     rgb8 bg_pixel = bg_value.buffer[idx];
     rgb8 in_pixel = in.buffer[idx];
     rgb8 candidate_pixel = candidate_value.buffer[idx];
@@ -126,7 +128,7 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
             candidate_pixel.r = in_pixel.r;
             candidate_pixel.g = in_pixel.g;
             candidate_pixel.b = in_pixel.b;
-            candidate_value.buffer[idx] = candidate_pixel;
+            candidate_value.buffer[idx] = {candidate_pixel.r, candidate_pixel.g, candidate_pixel.b};
             time ++;
         } else if (time < 100) {
             candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
@@ -141,7 +143,7 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
             time = 0;
         }
     }
-    time_matrix[y * in.width + x] = time;
+    // time_matrix[idx] = time;
 
     // double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
     // int idx = y * in.width + x;
