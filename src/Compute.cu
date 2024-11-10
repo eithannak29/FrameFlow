@@ -99,6 +99,8 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
+    // printf("aled");
+
     const double strictDistanceThreshold = 0.25;
     const double highlightDistanceMultiplier = 2.8; 
 
@@ -106,16 +108,20 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     int idx = y * in.width + x;
 
-    rgb8* bg_pixel = (rgb8 *)((std::byte*)bg_value.buffer[y * bg_value.stride + x]);
-    rgb8 in_pixel = (rgb8 *)((std::byte*)in.buffer[y * in.stride + x]);
-    rgb8 candidate_pixel = (rgb8 *)((std::byte*)candidate_value.buffer[y * candidate_value.stride + x]);
+    rgb8* bg_pixel = (rgb8 *)((std::byte*)bg_value.buffer + y * bg_value.stride);
+    rgb8* in_pixel = (rgb8 *)((std::byte*)in.buffer + y * in.stride);
+    rgb8* candidate_pixel = (rgb8 *)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
 
-    Lab lab_in = rgbToLabGPU(in_pixel);
-    Lab lab_bg = rgbToLabGPU(bg_pixel);
+    if (bg_pixel[x].r != in_pixel[x].r)
+        printf("pas pareil");
+
+    Lab lab_in = rgbToLabGPU(in_pixel[x]);
+    Lab lab_bg = rgbToLabGPU(bg_pixel[x]);
 
     double distance = deltaEGPU(lab_in, lab_bg);
+    // printf("%f disatnce", distance);
     int time = time_matrix[idx];
-    bool match = distance < 25.0;
+    bool match = distance < 25;
     // int time = 0;
     if (match) {
         time = 0;
@@ -124,14 +130,17 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
         bg_pixel[x].b = (bg_pixel[x].b + in_pixel[x].b) / 2;
     } else {
         if (time == 0) {
-            candidate_value[x] = in_pixel[x];
+            candidate_pixel[x].r = in_pixel[x].r;
+            candidate_pixel[x].g = in_pixel[x].g;
+            candidate_pixel[x].b = in_pixel[x].b;
             time ++;
         } else if (time < 100) {
-            candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
-            candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
-            candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
+            candidate_pixel[x].r = (candidate_pixel[x].r + in_pixel[x].r) / 2;
+            candidate_pixel[x].g = (candidate_pixel[x].g + in_pixel[x].g) / 2;
+            candidate_pixel[x].b = (candidate_pixel[x].b + in_pixel[x].b) / 2;
             time++;
         } else {
+            printf("oui swap");
             mySwapCuda(bg_pixel[x], candidate_pixel[x]);
             time = 0;
         }
@@ -143,10 +152,12 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     // double distance = 0;
     if (distance < strictDistanceThreshold)
     {
+        // printf("salut");
         in_pixel[x] = {0, 0, 0};
     }
     else
     {
+        printf("ca va pas");
         uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
         in_pixel[x] = {intensity, intensity, 0};
     }
@@ -155,36 +166,23 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
 
 void compute_cu(ImageView<rgb8> in) {
-    cudaError_t err;
-    static bool initialized = false;
     static Image<rgb8> device_bg;
     static Image<rgb8> device_candidate;
     static int* time_matrix;
-
     // Define thresholds for smoother filtering
-    const float min_threshold = 10.0f;
-    const float max_threshold = 20.0f;
-    const int max_time_since_match = 50;
+    // const float min_threshold = 10.0f;
+    // const float max_threshold = 20.0f;
+    // const int max_time_since_match = 50;
 
-    // Allocate device memory for images and distances
-    Image<rgb8> device_in(in.width, in.height, true);
-    if (!initialized) {
+
+    if (device_bg.buffer == nullptr) {
+        // Initialize background and candidate images
         device_bg = Image<rgb8>(in.width, in.height, true);
         device_candidate = Image<rgb8>(in.width, in.height, true);
-    }
-    // float* distances;
-    // CUDA_CHECK(cudaMalloc(&distances, in.width * in.height * sizeof(float)));
-
-    // Copy input image to device
-    cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-
-    if (!initialized) {
-        // Initialize background and candidate images
         cudaMemcpy2D(device_bg.buffer, device_bg.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
         cudaMemcpy2D(device_candidate.buffer, device_candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
         CUDA_CHECK(cudaMalloc(&time_matrix, in.width * in.height * sizeof(int)));
         CUDA_CHECK(cudaMemset(time_matrix, 0, in.width * in.height * sizeof(int)));
-        initialized = true;
     }
 
     // Compute distances between background and input image
@@ -192,27 +190,15 @@ void compute_cu(ImageView<rgb8> in) {
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
     
     
+    // Allocate device memory for images and distances
+    Image<rgb8> device_in(in.width, in.height, true);
 
-    std::cout << "before apply" << std::endl;
+    // Copy input image to device
+    cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+
+    // std::cout << "before apply" << std::endl;
     applyFlow<<<grid, block>>>(device_in, device_bg, device_candidate, time_matrix);
-    // err = cudaGetLastError();
-    // if (err != cudaSuccess) {
-    //     fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // Synchroniser le dispositif
-    // err = cudaDeviceSynchronize();
-    // if (err != cudaSuccess) {
-    //     fprintf(stderr, "Erreur lors de la synchronisation du dispositif : %s\n", cudaGetErrorString(err));
-    //     exit(EXIT_FAILURE);
-    // }
 
     // Copier le résultat vers l'hôte
-    err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
-    // if (err != cudaSuccess) {
-    //     fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
-    //     exit(EXIT_FAILURE);
-        
-    // }
+    cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 }
