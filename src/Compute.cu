@@ -70,60 +70,141 @@ __device__ float deltaEGPU(const Lab& lab1, const Lab& lab2) {
     return sqrtf(dL * dL + da * da + db * db);
 }
 
-// Kernel to compute distances between two images using Lab color space
-__global__ void computeDistancesLabGPU(const rgb8* img1_buffer, const rgb8* img2_buffer, float* distances, int width, int height) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= width || y >= height) return;
+// // Kernel to compute distances between two images using Lab color space
+// __global__ void computeDistancesLabGPU(const rgb8* img1_buffer, const rgb8* img2_buffer, float* distances, int width, int height) {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     if (x >= width || y >= height) return;
 
-    int idx = y * width + x;
+//     int idx = y * width + x;
 
-    rgb8 pixel1 = img1_buffer[idx];
-    rgb8 pixel2 = img2_buffer[idx];
+//     rgb8 pixel1 = img1_buffer[idx];
+//     rgb8 pixel2 = img2_buffer[idx];
 
-    Lab lab1 = rgbToLabGPU(pixel1);
-    Lab lab2 = rgbToLabGPU(pixel2);
-    distances[idx] = deltaEGPU(lab1, lab2);
+//     Lab lab1 = rgbToLabGPU(pixel1);
+//     Lab lab2 = rgbToLabGPU(pixel2);
+//     distances[idx] = deltaEGPU(lab1, lab2);
+// }
+
+// // Kernel to apply a smooth filter based on distances
+// __global__ void applySmoothFilterCUDA(rgb8* in_buffer, float* distances, float min_threshold, float max_threshold, int width, int height) {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     if (x >= width || y >= height) return;
+
+//     int idx = y * width + x;
+//     float distance = distances[idx];
+
+//     // Smooth threshold range to reduce noise artifacts
+//     if (distance < min_threshold) {
+//         in_buffer[idx] = {0, 0, 0};  // Background
+//     } else if (distance > max_threshold) {
+//         in_buffer[idx] = {255, 0, 0};  // Foreground object in white
+//     } else {
+//         // Linear interpolation for smoother transition
+//         uint8_t intensity = static_cast<uint8_t>(255 * (distance - min_threshold) / (max_threshold - min_threshold));
+//         in_buffer[idx] = {intensity, intensity, intensity}; // Gray transition
+//     }
+// }
+
+// // Kernel to update the background image
+// __global__ void updateBackgroundCUDA(rgb8* bg_buffer, const rgb8* in_buffer, int width, int height) {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     if (x >= width || y >= height) return;
+
+//     int idx = y * width + x;
+
+//     rgb8 bg_pixel = bg_buffer[idx];
+//     rgb8 in_pixel = in_buffer[idx];
+
+//     bg_pixel.r = (bg_pixel.r + in_pixel.r) / 2;
+//     bg_pixel.g = (bg_pixel.g + in_pixel.g) / 2;
+//     bg_pixel.b = (bg_pixel.b + in_pixel.b) / 2;
+
+//     bg_buffer[idx] = bg_pixel;
+// }
+
+__device__ double mymin(const double a, const double b){
+    if (a < b)
+        return a;
+    return b;
 }
 
-// Kernel to apply a smooth filter based on distances
-__global__ void applySmoothFilterCUDA(rgb8* in_buffer, float* distances, float min_threshold, float max_threshold, int width, int height) {
+
+__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= width || y >= height) return;
 
-    int idx = y * width + x;
-    float distance = distances[idx];
+    if (x >= in.width || y >= in.height) return;
 
-    // Smooth threshold range to reduce noise artifacts
-    if (distance < min_threshold) {
-        in_buffer[idx] = {0, 0, 0};  // Background
-    } else if (distance > max_threshold) {
-        in_buffer[idx] = {255, 0, 0};  // Foreground object in white
+    int idx = y * in.width + x;
+
+    rgb8 bg_pixel = bg_value.buffer[idx];
+    rgb8 in_pixel = in.buffer[idx];
+    rgb8 candidate_pixel = candidate_value.buffer[idx];
+
+    Lab lab_in = rgbToLabCUDA(in_pixel);
+    Lab lab_bg = rgbToLabCUDA(bg_pixel);
+
+    double distance = deltaECUDA(lab_in, lab_bg);
+    int time = time_matrix[y * in.width + x];
+    bool match = distance < 25.0;
+
+    if (match) {
+        time = 0;
+        bg_pixel.r = in_pixel.r;
+        bg_pixel.g = in_pixel.g;
+        bg_pixel.b = in_pixel.b;
+        bg_value.buffer[idx] = bg_pixel;
     } else {
-        // Linear interpolation for smoother transition
-        uint8_t intensity = static_cast<uint8_t>(255 * (distance - min_threshold) / (max_threshold - min_threshold));
-        in_buffer[idx] = {intensity, intensity, intensity}; // Gray transition
+        if (time == 0) {
+            candidate_pixel.r = in_pixel.r;
+            candidate_pixel.g = in_pixel.g;
+            candidate_pixel.b = in_pixel.b;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time++;
+        } else if (time < 100) {
+            candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
+            candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
+            candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time++;
+        } else {
+            mySwapCuda(bg_pixel, candidate_pixel);
+            bg_value.buffer[idx] = bg_pixel;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time = 0;
+        }
     }
+    time_matrix[y * in.width + x] = time;
 }
 
-// Kernel to update the background image
-__global__ void updateBackgroundCUDA(rgb8* bg_buffer, const rgb8* in_buffer, int width, int height) {
+__global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix)
+{
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= width || y >= height) return;
 
-    int idx = y * width + x;
+    const double strictDistanceThreshold = 0.25;
+    const double highlightDistanceMultiplier = 2.8; 
 
-    rgb8 bg_pixel = bg_buffer[idx];
-    rgb8 in_pixel = in_buffer[idx];
+    if (x >= in.width || y >= in.height) return;
 
-    bg_pixel.r = (bg_pixel.r + in_pixel.r) / 2;
-    bg_pixel.g = (bg_pixel.g + in_pixel.g) / 2;
-    bg_pixel.b = (bg_pixel.b + in_pixel.b) / 2;
-
-    bg_buffer[idx] = bg_pixel;
+    double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
+    
+    int idx = y * in.width + x;
+    if (distance < strictDistanceThreshold)
+    {
+        in.buffer[idx] = {0, 0, 0};
+    }
+    else
+    {
+        uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
+        in.buffer[idx] = {intensity, intensity, 0};
+    }
+    
 }
+
 
 void compute_cu(ImageView<rgb8> in) {
     static bool initialized = false;
@@ -159,43 +240,35 @@ void compute_cu(ImageView<rgb8> in) {
     // Compute distances between background and input image
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
-    computeDistancesLabGPU<<<grid, block>>>(device_bg.buffer, device_in.buffer, distances, in.width, in.height);
-    CUDA_CHECK(cudaDeviceSynchronize());
 
-    // Copy distances to host to compute match_distance
-    std::vector<float> host_distances(in.width * in.height);
-    CUDA_CHECK(cudaMemcpy(host_distances.data(), distances, in.width * in.height * sizeof(float), cudaMemcpyDeviceToHost));
 
-    // Calculate match distances and apply background estimation logic
-    double sum = 0.0;
-    for (float d : host_distances) sum += d;
-    double match_distance = sum / (in.width * in.height);
-
-    // Background and candidate update logic
-    if (match_distance < min_threshold) {
-        // Update background on the device
-        updateBackgroundCUDA<<<grid, block>>>(device_bg.buffer, device_in.buffer, in.width, in.height);
-        CUDA_CHECK(cudaDeviceSynchronize());
-        time_since_match = 0;
-    } else if (time_since_match < max_time_since_match) {
-        // Update candidate on the device
-        updateBackgroundCUDA<<<grid, block>>>(device_candidate.buffer, device_in.buffer, in.width, in.height);
-        CUDA_CHECK(cudaDeviceSynchronize());
-        time_since_match++;
-    } else {
-        // Replace background with candidate
-        CUDA_CHECK(cudaMemcpy(device_bg.buffer, device_candidate.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice));
-        time_since_match = 0;
+    std::cout << "before device in" << std::endl;
+    Image<rgb8> device_in(in.width, in.height, true);
+    err = cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) {
+            fprintf(stderr, "Erreur d'allocation de device_in: %s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+    std::cout << "before apply" << std::endl;
+    applyFlow<<<grid, block>>>(device_in, bg_value, candidate, time_matrix);
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
     }
 
-    // Apply smooth threshold filter to reduce artifacts
-    applySmoothFilterCUDA<<<grid, block>>>(device_in.buffer, distances, min_threshold, max_threshold, in.width, in.height);
-    CUDA_CHECK(cudaDeviceSynchronize());
+    // Synchroniser le dispositif
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors de la synchronisation du dispositif : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
-    // Copy the filtered image back to the host
-    CUDA_CHECK(cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride,
-                            in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost));
-
-    // Free device memory for distances
-    CUDA_CHECK(cudaFree(distances));
+    // Copier le résultat vers l'hôte
+    err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+        
+    }
 }
