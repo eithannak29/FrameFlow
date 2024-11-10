@@ -138,7 +138,7 @@ __device__ double mymin(const double a, const double b){
 }
 
 
-__device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix) {
+__global__ void back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -154,11 +154,11 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_
     Lab lab_bg = rgbToLabGPU(bg_pixel);
 
     double distance = deltaEGPU(lab_in, lab_bg);
-    int time = time_matrix[y * in.width + x];
+    int time = time_matrix[idx];
     bool match = distance < 25.0;
-
+    // int time = 0;
     if (match) {
-        time = 0;
+        // time = 0;
         bg_pixel.r = in_pixel.r;
         bg_pixel.g = in_pixel.g;
         bg_pixel.b = in_pixel.b;
@@ -169,21 +169,21 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_
             candidate_pixel.g = in_pixel.g;
             candidate_pixel.b = in_pixel.b;
             candidate_value.buffer[idx] = candidate_pixel;
-            time++;
+            //time +;
         } else if (time < 100) {
             candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
             candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
             candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
             candidate_value.buffer[idx] = candidate_pixel;
-            time++;
+            //time++;
         } else {
             mySwapCuda(bg_pixel, candidate_pixel);
             bg_value.buffer[idx] = bg_pixel;
             candidate_value.buffer[idx] = candidate_pixel;
-            time = 0;
+            //time = 0;
         }
     }
-    time_matrix[y * in.width + x] = time;
+    // time_matrix[y * in.width + x] = time;
 }
 
 __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix)
@@ -197,8 +197,8 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     if (x >= in.width || y >= in.height) return;
 
     // double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
-    double distance = 1.0;
     int idx = y * in.width + x;
+    double distance = 0;
     if (distance < strictDistanceThreshold)
     {
         in.buffer[idx] = {0, 0, 0};
@@ -248,6 +248,8 @@ void compute_cu(ImageView<rgb8> in) {
     // Compute distances between background and input image
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
+    
+    
 
     std::cout << "before apply" << std::endl;
     applyFlow<<<grid, block>>>(device_in, device_bg, device_candidate, time_matrix);
