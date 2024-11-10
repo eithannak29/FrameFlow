@@ -76,61 +76,6 @@ __device__ float deltaEGPU(const Lab& lab1, const Lab& lab2) {
     return sqrtf(dL * dL + da * da + db * db);
 }
 
-// // Kernel to compute distances between two images using Lab color space
-// __global__ void computeDistancesLabGPU(const rgb8* img1_buffer, const rgb8* img2_buffer, float* distances, int width, int height) {
-//     int x = blockIdx.x * blockDim.x + threadIdx.x;
-//     int y = blockIdx.y * blockDim.y + threadIdx.y;
-//     if (x >= width || y >= height) return;
-
-//     int idx = y * width + x;
-
-//     rgb8 pixel1 = img1_buffer[idx];
-//     rgb8 pixel2 = img2_buffer[idx];
-
-//     Lab lab1 = rgbToLabGPU(pixel1);
-//     Lab lab2 = rgbToLabGPU(pixel2);
-//     distances[idx] = deltaEGPU(lab1, lab2);
-// }
-
-// // Kernel to apply a smooth filter based on distances
-// __global__ void applySmoothFilterCUDA(rgb8* in_buffer, float* distances, float min_threshold, float max_threshold, int width, int height) {
-//     int x = blockIdx.x * blockDim.x + threadIdx.x;
-//     int y = blockIdx.y * blockDim.y + threadIdx.y;
-//     if (x >= width || y >= height) return;
-
-//     int idx = y * width + x;
-//     float distance = distances[idx];
-
-//     // Smooth threshold range to reduce noise artifacts
-//     if (distance < min_threshold) {
-//         in_buffer[idx] = {0, 0, 0};  // Background
-//     } else if (distance > max_threshold) {
-//         in_buffer[idx] = {255, 0, 0};  // Foreground object in white
-//     } else {
-//         // Linear interpolation for smoother transition
-//         uint8_t intensity = static_cast<uint8_t>(255 * (distance - min_threshold) / (max_threshold - min_threshold));
-//         in_buffer[idx] = {intensity, intensity, intensity}; // Gray transition
-//     }
-// }
-
-// // Kernel to update the background image
-// __global__ void updateBackgroundCUDA(rgb8* bg_buffer, const rgb8* in_buffer, int width, int height) {
-//     int x = blockIdx.x * blockDim.x + threadIdx.x;
-//     int y = blockIdx.y * blockDim.y + threadIdx.y;
-//     if (x >= width || y >= height) return;
-
-//     int idx = y * width + x;
-
-//     rgb8 bg_pixel = bg_buffer[idx];
-//     rgb8 in_pixel = in_buffer[idx];
-
-//     bg_pixel.r = (bg_pixel.r + in_pixel.r) / 2;
-//     bg_pixel.g = (bg_pixel.g + in_pixel.g) / 2;
-//     bg_pixel.b = (bg_pixel.b + in_pixel.b) / 2;
-
-//     bg_buffer[idx] = bg_pixel;
-// }
-
 __device__ double mymin(const double a, const double b){
     if (a < b)
         return a;
@@ -146,44 +91,7 @@ __global__ void back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_va
 
     int idx = y * in.width + x;
 
-    rgb8 bg_pixel = bg_value.buffer[idx];
-    rgb8 in_pixel = in.buffer[idx];
-    rgb8 candidate_pixel = candidate_value.buffer[idx];
 
-    Lab lab_in = rgbToLabGPU(in_pixel);
-    Lab lab_bg = rgbToLabGPU(bg_pixel);
-
-    double distance = deltaEGPU(lab_in, lab_bg);
-    int time = time_matrix[idx];
-    bool match = distance < 25.0;
-    // int time = 0;
-    if (match) {
-        // time = 0;
-        bg_pixel.r = in_pixel.r;
-        bg_pixel.g = in_pixel.g;
-        bg_pixel.b = in_pixel.b;
-        bg_value.buffer[idx] = bg_pixel;
-    } else {
-        if (time == 0) {
-            candidate_pixel.r = in_pixel.r;
-            candidate_pixel.g = in_pixel.g;
-            candidate_pixel.b = in_pixel.b;
-            candidate_value.buffer[idx] = candidate_pixel;
-            //time +;
-        } else if (time < 100) {
-            candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
-            candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
-            candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
-            candidate_value.buffer[idx] = candidate_pixel;
-            //time++;
-        } else {
-            mySwapCuda(bg_pixel, candidate_pixel);
-            bg_value.buffer[idx] = bg_pixel;
-            candidate_value.buffer[idx] = candidate_pixel;
-            //time = 0;
-        }
-    }
-    // time_matrix[y * in.width + x] = time;
 }
 
 __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate_value, int* time_matrix)
@@ -196,9 +104,48 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     if (x >= in.width || y >= in.height) return;
 
+    rgb8 bg_pixel = bg_value.buffer[idx];
+    rgb8 in_pixel = in.buffer[idx];
+    rgb8 candidate_pixel = candidate_value.buffer[idx];
+
+    Lab lab_in = rgbToLabGPU(in_pixel);
+    Lab lab_bg = rgbToLabGPU(bg_pixel);
+
+    double distance = deltaEGPU(lab_in, lab_bg);
+    int time = time_matrix[idx];
+    bool match = distance < 25.0;
+    // int time = 0;
+    if (match) {
+        time = 0;
+        bg_pixel.r = in_pixel.r;
+        bg_pixel.g = in_pixel.g;
+        bg_pixel.b = in_pixel.b;
+        bg_value.buffer[idx] = bg_pixel;
+    } else {
+        if (time == 0) {
+            candidate_pixel.r = in_pixel.r;
+            candidate_pixel.g = in_pixel.g;
+            candidate_pixel.b = in_pixel.b;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time ++;
+        } else if (time < 100) {
+            candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
+            candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
+            candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time++;
+        } else {
+            mySwapCuda(bg_pixel, candidate_pixel);
+            bg_value.buffer[idx] = bg_pixel;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time = 0;
+        }
+    }
+    time_matrix[y * in.width + x] = time;
+
     // double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
-    int idx = y * in.width + x;
-    double distance = 0;
+    // int idx = y * in.width + x;
+    // double distance = 0;
     if (distance < strictDistanceThreshold)
     {
         in.buffer[idx] = {0, 0, 0};
