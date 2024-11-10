@@ -75,39 +75,48 @@ __device__ double back_ground_estimation(ImageView<rgb8> in, ImageView<rgb8> bg_
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x < in.width && y < in.height) {
-        rgb8* in_pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-        rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
-        rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate.buffer + y * candidate.stride);
+    if (x >= width || y >= height) return;
 
-        Lab lab_in = rgbToLabCUDA(*in_pixel);
-        Lab lab_bg = rgbToLabCUDA(*bg_pixel);
+    int idx = y * in.width + x;
 
-        double distance = deltaECUDA(lab_in, lab_bg);
-        int time = time_matrix[y * in.width + x];
-        bool match = distance < 25.0;
+    rgb8 bg_pixel = bg_value.buffer[idx];
+    rgb8 in_pixel = in.buffer[idx];
+    rgb8 candidate_pixel = candidate_value.buffer[idx];
 
-        if (match) {
-            time = 0;
-            *bg_pixel = *in_pixel;
+    Lab lab_in = rgbToLabCUDA(in_pixel);
+    Lab lab_bg = rgbToLabCUDA(bg_pixel);
+
+    double distance = deltaECUDA(lab_in, lab_bg);
+    int time = time_matrix[y * in.width + x];
+    bool match = distance < 25.0;
+
+    if (match) {
+        time = 0;
+        bg_pixel.r = in_pixel.r;
+        bg_pixel.g = in_pixel.g;
+        bg_pixel.b = in_pixel.b;
+        bg_value.buffer[idx] = bg_pixel;
+    } else {
+        if (time == 0) {
+            candidate_pixel.r = in_pixel.r;
+            candidate_pixel.g = in_pixel.g;
+            candidate_pixel.b = in_pixel.b;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time++;
+        } else if (time < 100) {
+            candidate_pixel.r = (candidate_pixel.r + in_pixel.r) / 2;
+            candidate_pixel.g = (candidate_pixel.g + in_pixel.g) / 2;
+            candidate_pixel.b = (candidate_pixel.b + in_pixel.b) / 2;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time++;
         } else {
-            if (time == 0) {
-                candidate_pixel[x].r = in_pixel[x].r;
-                candidate_pixel[x].g = in_pixel[x].g;
-                candidate_pixel[x].b = in_pixel[x].b;
-                time++;
-            } else if (time < 100) {
-                candidate_pixel[x].r = (candidate_pixel[x].r + in_pixel[x].r) / 2;
-                candidate_pixel[x].g = (candidate_pixel[x].g + in_pixel[x].g) / 2;
-                candidate_pixel[x].b = (candidate_pixel[x].b + in_pixel[x].b) / 2;
-                time++;
-            } else {
-                mySwapCuda(*bg_pixel, *candidate_pixel);
-                time = 0;
-            }
+            mySwapCuda(bg_pixel, candidate_pixel);
+            bg_value.buffer[idx] = bg_pixel;
+            candidate_value.buffer[idx] = candidate_pixel;
+            time = 0;
         }
-        time_matrix[y * in.width + x] = time;
     }
+    time_matrix[y * in.width + x] = time;
 }
 
 __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageView<rgb8> candidate, int* time_matrix)
@@ -118,23 +127,21 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
     const double strictDistanceThreshold = 0.25;
     const double highlightDistanceMultiplier = 2.8; 
 
-    if (x < in.width && y < in.height)
+    if (x >= width || y >= height) return;
+
+    double distance = back_ground_estimation(in, bg_value, candidate, time_matrix);
+    
+    int idx = y * in.width + x;
+    if (distance < strictDistanceThreshold)
     {
-        double distance = back_ground_estimation(in, bg_value, candidate, time_matrix);
-        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-        pixel[x].b = 0; 
-        if (distance < strictDistanceThreshold)
-        {
-            pixel[x].r = 0; 
-            pixel[x].g = 0;
-        }
-        else
-        {
-            uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
-            pixel[x].r = intensity;
-            pixel[x].g= intensity;
-        }
+        in_buffer[idx] = {0, 0, 0};
     }
+    else
+    {
+        uint8_t intensity = static_cast<uint8_t>(mymin(255.0, distance * highlightDistanceMultiplier));
+        in_buffer[idx] = {intensity, intensity, 0};
+    }
+    
 }
 
 void compute_cu(ImageView<rgb8> in )
