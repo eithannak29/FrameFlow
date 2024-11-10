@@ -180,7 +180,23 @@ void compute_cu(ImageView<rgb8> in )
     // }
     std::cout << "before apply" << std::endl;
     applyFlow<<<grid, block>>>(device_in, bg_value, candidate, time_matrix);
-    std::cout << "before device to host" << std::endl;
-    cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
-    std::cout << "after device to host" << std::endl;
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors du lancement du kernel : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Synchroniser le dispositif
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors de la synchronisation du dispositif : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Copier le résultat vers l'hôte
+    err = cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride,
+                       in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Erreur lors de la copie de l'image traitée vers l'hôte : %s\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
 }
