@@ -196,8 +196,8 @@ __global__ void applyFlow(ImageView<rgb8> in, ImageView<rgb8> bg_value, ImageVie
 
     if (x >= in.width || y >= in.height) return;
 
-    double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
-    
+    // double distance = back_ground_estimation(in, bg_value, candidate_value, time_matrix);
+    double distance = 1.0;
     int idx = y * in.width + x;
     if (distance < strictDistanceThreshold)
     {
