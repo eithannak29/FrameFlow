@@ -149,41 +149,37 @@ void compute_cu(ImageView<rgb8> in )
         std::cout << "init" << std::endl;
         bg_value = Image<uint8_t>(in.width, in.height, true);
         candidate = Image<uint8_t>(in.width, in.height, true);
-        cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-        // if (rc != cudaSuccess)
-        // {
-        //     std::cerr << "Error copying bg to device: " << cudaGetErrorString(rc) << std::endl;
-        //     return;
-        // }
-        cudaMemcpy2D(candidate.buffer, candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-        // if (rc != cudaSuccess)
-        // {
-        //     std::cerr << "Error copying candidate to device: " << cudaGetErrorString(rc) << std::endl;
-        //     return;
-        // }
-        cudaMalloc(&time_matrix, in.width * in.height * sizeof(int));
-        // if (rc != cudaSuccess)
-        // {
-        //     std::cerr << "Error allocating time_matrix on device: " << cudaGetErrorString(rc) << std::endl;
-        //     return;
-        // }
+        err = cudaMemcpy2D(bg_value.buffer, bg_value.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Erreur d'allocation de bg_value : %s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+        err = cudaMemcpy2D(candidate.buffer, candidate.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Erreur d'allocation de canditate : %s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
+        err = cudaMalloc(&time_matrix, in.width * in.height * sizeof(int));
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Erreur d'allocation de time matrix : %s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
     }
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
     
     std::cout << "before device in" << std::endl;
     Image<rgb8> device_in(in.width, in.height, true);
-    cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
-    // if (rc != cudaSuccess)
-    // {
-    //     std::cerr << "Error copying in to device: " << cudaGetErrorString(rc) << std::endl;
-    //     return;
-    // }
+    err = cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) {
+            fprintf(stderr, "Erreur d'allocation de device_in: %s\n", cudaGetErrorString(err));
+            exit(EXIT_FAILURE);
+        }
     std::cout << "before apply" << std::endl;
     applyFlow<<<grid, block>>>(device_in, bg_value, candidate, time_matrix);
     err = cudaGetLastError();
     if (err != cudaSuccess) {
-        fprintf(stderr, "Erreur lors du lancement du kernel : %s\n", cudaGetErrorString(err));
+        fprintf(stderr, "Erreur lors du lancement du filtre : %s\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 
