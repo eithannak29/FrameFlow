@@ -23,13 +23,13 @@ std::vector<std::vector<int>> createDiskKernel(int radius) {
 
 
 // Appliquer une opération d'érosion
-void erode(ImageView<rgb8> image, const std::vector<std::vector<int>>& kernel, int radius) {
+void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
     ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     for (int y = radius; y < image.height - radius; ++y) {
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
         for (int x = radius; x < image.width - radius; ++x) {
-            rgb8& pixel = image.buffer[y * image.width + x];
-            if(pixel.r == 0){
+            if(pixel[x].r == 0){
                 continue;
             }
             uint8_t min_pixel = 255;
@@ -40,8 +40,8 @@ void erode(ImageView<rgb8> image, const std::vector<std::vector<int>>& kernel, i
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
                     
-                        rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                        min_pixel = std::min(min_pixel, kernel_pixel.r);                      
+                        rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
+                        min_pixel = std::min(min_pixel, kernel_pixel[x].r);                      
                         }
                     }
                 }
@@ -49,6 +49,7 @@ void erode(ImageView<rgb8> image, const std::vector<std::vector<int>>& kernel, i
             pixel.r = min_pixel;
             }
         }
+    in = copy;  
     }
 
 // Appliquer une opération de dilatation
