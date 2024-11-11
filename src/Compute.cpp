@@ -27,7 +27,26 @@ void compute_cu(ImageView<rgb8> in);
 Image<rgb8> bg_value;
 Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
+
 bool initialized = false;
+const int FRAMES_ACET = 268; //268 380 580;
+int frame_counter = 0;
+
+void show_progress(int current, int total) {
+    int barWidth = 50;
+    float progress = (float)current / total;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
 
 double sRGBToLinear(double c) {
     if (c <= 0.04045)
