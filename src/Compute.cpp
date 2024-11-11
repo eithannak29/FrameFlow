@@ -29,7 +29,7 @@ Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
 
 bool initialized = false;
-const int FRAMES_ACET = 268; //268 380 580;
+const int FRAMES = 268; //268 380 580;
 int frame_counter = 0;
 
 void show_progress(int current, int total) {
@@ -187,6 +187,9 @@ void background_estimation_process(ImageView<rgb8> in)
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
+  show_progress(frame_counter, FRAMES);
+  frame_counter++;
+
   Image<rgb8> img = Image<rgb8>();
   img.buffer = in.buffer;
   img.width = in.width;
