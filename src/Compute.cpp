@@ -1,13 +1,13 @@
 #include "Compute.hpp"
 #include "utils.hpp"
 #include "Image.hpp"
-#include "filter.hpp"
-#include <tuple>
-#include <vector>
-#include <cstdlib>
-#include <cstring> // Pour std::memcpy
+#include "logo.h"
 
+// #include <chrono>
 #include <iostream>
+// #include <stdlib.h>
+// #include <thread>
+
 
 /// Your cpp version of the algorithm
 /// This function is called by cpt_process_frame for each frame
@@ -18,21 +18,21 @@ void compute_cpp(ImageView<rgb8> in);
 /// This function is called by cpt_process_frame for each frame
 void compute_cu(ImageView<rgb8> in);
 
-// Global variables
-ImageView<rgb8> bg_value;
-ImageView<rgb8> candidate_value;
-int time_since_match;
-bool initialized = false;
-const int FRAMES_ACET = 580; //268 380 580;
+
+Image<rgb8> bg_value;
+Image<rgb8> candidate_value;
+ImageView<uint8_t> time_since_match;
+
+const int FRAMES = 268;
 int frame_counter = 0;
 
-void show_progress(int current, int total) {
+void show_progress(int current, int total){
     int barWidth = 50;
-    float progress = (float)current / total;
+    float progress = (float) current / total;
 
     std::cout << "[";
     int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
+    for (int i = 0; i < barWidth; ++i){
         if (i < pos) std::cout << "=";
         else if (i == pos) std::cout << ">";
         else std::cout << " ";
@@ -41,88 +41,120 @@ void show_progress(int current, int total) {
     std::cout.flush();
 }
 
-template <typename T>
-void mySwap(T& a, T& b) {
-    T temp = a;
-    a = b;
-    b = temp;
+int index(int x, int y, int stride){
+    return y * stride + x;
 }
 
-// Function to initialize the background model
-std::tuple<double, std::vector<double>> background_estimation_process(ImageView<rgb8> in){
-  auto [match_distance, distances] = matchImagesLab(bg_value, in);
-  auto [match_distance_candidate, distances_candidate] = matchImagesLab(candidate_value, in); // distance entre le candidat et l'image actuelle, à voir
-  double treshold = 0.25;
-  int max_time_since_match = 50;
-  
-  if (match_distance < treshold){
-    average(bg_value, in);
-    time_since_match = 0;
-  }
-  else{
-    if (time_since_match == 0){
-      for (int y=0; y < in.height; y++){
-        for (int x=0; x < in.width; x++){
-          int index = y * in.width + x;
-          candidate_value.buffer[index] = in.buffer[index];
+double background_estimation(ImageView<rgb8> in, int x, int y)
+{
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
+    rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.width);
+    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.width);
+
+    double distance = deltaE(rgbToLab(pixel[x]), rgbToLab(bg_pixel[x]));
+    bool match = distance < 25;
+
+    // std::cout << "aled: " << distance << std::endl;
+
+    int *time = (int*)((std::byte*)time_since_match.buffer + y * time_since_match.width);
+
+    if (!match)
+    {
+        if(time[x] == 0)
+        {
+            candidate_pixel[x].r = pixel[x].r;
+            candidate_pixel[x].g = pixel[x].g;
+            candidate_pixel[x].b = pixel[x].b;
+            time[x] += 1;
         }
-      }
-      time_since_match++;
+        else if (time[x] < 100)
+        {
+            candidate_pixel[x].r = (candidate_pixel[x].r + pixel[x].r) / 2;
+            candidate_pixel[x].g = (candidate_pixel[x].g + pixel[x].g) / 2;
+            candidate_pixel[x].b = (candidate_pixel[x].b + pixel[x].b) / 2;
+            time[x] += 1;
+        }
+        else
+        {
+            std::swap(bg_pixel[x].r, candidate_pixel[x].r);
+            std::swap(bg_pixel[x].g, candidate_pixel[x].g);
+            std::swap(bg_pixel[x].b, candidate_pixel[x].b);
+            time[x] = 0;        
+        }
     }
-    else if (time_since_match < max_time_since_match){
-      average(candidate_value, in);
-      time_since_match++;
+    else {
+        bg_pixel[x].r = (bg_pixel[x].r + pixel[x].r) / 2;
+        bg_pixel[x].g = (bg_pixel[x].g + pixel[x].g) / 2;
+        bg_pixel[x].b = (bg_pixel[x].b + pixel[x].b) / 2; 
+        time[x] = 0;
     }
-    else{
-      if (match_distance_candidate < treshold){  // cas ou l'on veux changer de background, et que le mouvement n'est pas éfemère
-        mySwap(bg_value, candidate_value);
-        time_since_match = 0;
-      }
-    }
-  }
-  // std::cout << "Background match distance: " << match_distance << std::endl;
-  return std::make_tuple(match_distance, distances);
+    return distance;
 }
 
-template <class T>
-std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
-    int totalSize = width * height; // Nombre total de pixels
-    std::vector<T> pixelArray(totalSize); // Création du tableau avec la taille appropriée
-    std::copy(sourceBuffer, sourceBuffer + totalSize, pixelArray.begin()); // Copie des pixels
-    return pixelArray;
+void background_estimation_process(ImageView<rgb8> in)
+{
+    const double treshold = 25;
+    const double distanceMultiplier = 2.8;
+
+    for (int y = 0; y < in.height; ++y)
+    {
+        for (int x = 0; x < in.width; ++x)
+        {
+            double distance = background_estimation(in, x, y);
+            rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
+            uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * distanceMultiplier));
+                pixel[x].r = intensity;
+        }
+    }
 }
+
+void reconstruction(ImageView<rgb8> in, ImageView<rgb8> copy)
+{
+    for (int y = 0; y < in.height; ++y)
+    {
+        for (int x = 0; x < in.width; ++x)
+        {
+            rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
+            rgb8* copy_pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.width);
+            if (copy_pixel[x].r != 0){
+                pixel[x].r = copy_pixel[x].r;
+                pixel[x].g = copy_pixel[x].g;
+                pixel[x].b = copy_pixel[x].b;    
+            }
+        }
+    }
+}
+
+
 
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-
-  show_progress(frame_counter, FRAMES_ACET);
-  frame_counter++;
-  if (!initialized)
-  {
-    // std::cout << "Initialized Background" << std::endl;
-    init_background_model(in);
-    initialized = true;
-  }
-  else{
-    std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
-
-    auto [match_distance, distances] = background_estimation_process(in);
-    //std::cout << "filter" << std::endl;
-    in = applyFilter(in, distances);
-    //in = applyFilterHeatmap(in, distances);
-    
-    //std::cout << "morphologie" << std::endl;
-    morphologicalOpening(in, 3);
-    //std::cout << "mask" << std::endl;
-    ImageView<rgb8> mask = HysteresisThreshold(in,10,35);
-    //std::cout << "apply mask" << std::endl;
-
-    in = applyRedMask(in, mask, initialPixels);
-    //std::cout << "end" << std::endl;
-
-  }
+    show_progress(frame_counter, FRAMES);
+    frame_counter++;
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.stride;
+    if (bg_value.buffer == nullptr)
+    {
+        std::cout << "aled" << std::endl; 
+        bg_value = img.clone();
+        candidate_value = img.clone();
+        std::cout << "another" << std::endl;
+        // init_background_model(in);
+        void* buffer = calloc(in.width * in.height, sizeof(uint8_t));
+        std::cout << "en vrai si je saute de ma fenêtre je meurs" << std::endl;
+        time_since_match = ImageView<uint8_t>{(uint8_t*)buffer, in.width, in.height, in.stride};
+    }
+    std::cout << "ff" << std::endl;
+    // Image<rgb8> copy = img.clone();
+    std::cout << "py" << std::endl;
+    background_estimation_process(in);
+    // reconstruction(in, copy);
 }
+
 
 extern "C" {
 

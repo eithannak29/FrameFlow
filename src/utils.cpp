@@ -1,27 +1,20 @@
-#include "utils.hpp"
+// #include "Compute.hpp"
 #include "Image.hpp"
+#include "utils.hpp"
 
+#include <vector>
 #include <iostream>
 #include <cmath>
-#include <vector>
-#include <tuple>
-#include <algorithm>
-#include <cstdlib>
 
-#define SQR(x) ((x)*(x))
-
-void init_background_model(ImageView<rgb8> in)
-{
-  bg_value = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
-  candidate_value = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
+void image_copy(ImageView<rgb8> in, ImageView<rgb8> copy){
+    
   for (int y=0; y < in.height; y++){
     for (int x=0; x < in.width; x++){
-      int index = y * in.width + x;
-      bg_value.buffer[index] = in.buffer[index];
-      candidate_value.buffer[index] = in.buffer[index];
+      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
+      rgb8* copy_pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.width);
+      copy_pixel[x] = pixel[x];
+        }
     }
-  }
-  time_since_match = 0;
 }
 
 // Fonction pour convertir sRGB en RGB linéaire
@@ -94,118 +87,4 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
     double da = lab1.a - lab2.a;
     double db = lab1.b - lab2.b;
     return std::sqrt(dL * dL + da * da + db * db);
-}
-
-ImageView<rgb8> applyFilter(ImageView<rgb8> in, std::vector<double> distances) {
-  //const double adaptationRate = 0.1;
-  const double strictDistanceThreshold = 0.25;
-  const double highlightDistanceMultiplier = 2.8; 
-
-  //ImageView<rgb8> filtered = ImageView<rgb8>{new rgb8[in.width * in.height], in.width, in.height, in.stride};
-
-  for (int y = 0; y < in.height; y++) {
-    for (int x = 0; x < in.width; x++) {
-      int index = y * in.width + x;
-      //rgb8 pixel = in.buffer[index];
-      //rgb8 bg_pixel = bg_value.buffer[index];
-
-      double distance = distances[index];
-      //std::cout << "Distance: " << distance << ", index: " << index << std::endl ;
-
-      // Background adaptation and filtering
-      if (distance < strictDistanceThreshold) {
-        // Mark as background if within threshold
-        in.buffer[index] = {0, 0, 0};
-        
-      } else {
-        // For objects that differ significantly from the background, increase highlight intensity
-        uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * highlightDistanceMultiplier));
-        in.buffer[index] = {intensity, intensity, 0};
-      }
-    }
-  }
-  
-  return in;
-}
-
-// ImageView<rgb8> applyFilterHeatmap(ImageView<rgb8> in, const std::vector<double>& distances) {
-//   // Calcul de la distance maximale
-//   double maxDistance = *std::max_element(distances.begin(), distances.end());
-
-//   // Gestion du cas où maxDistance est très faible pour éviter la division par zéro
-//   if (maxDistance < 1e-5) {
-//     maxDistance = 1e-5;
-//   }
-  
-//   for (int y = 0; y < in.height; y++) {
-//     for (int x = 0; x < in.width; x++) {
-//       int index = y * in.width + x;
-//       double distance = distances[index];
-      
-//       // Normalisation de la distance pour un affichage en heatmap
-//       double normalizedDistance = distance / maxDistance;
-      
-//       // Calcul des composantes couleur (bleu -> rouge)
-//       uint8_t red = static_cast<uint8_t>(255 * normalizedDistance);
-//       uint8_t blue = static_cast<uint8_t>(255 * (1 - normalizedDistance));
-      
-//       // Appliquer la couleur en heatmap
-//       in.buffer[index] = {red, 0, blue}; 
-//     }
-//   }
-  
-//   return in;
-// }
-
-// Fonction optimisée pour calculer la distance moyenne en utilisant la distance Lab
-std::tuple<double, std::vector<double>> matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2) {
-    std::vector<double> distances;
-
-    if (img1.width != img2.width || img1.height != img2.height) {
-        std::cerr << "Erreur : les dimensions des images ne correspondent pas." << std::endl;
-        return std::make_tuple(-1.0, distances);  // Retourne une valeur indicative d'erreur
-    }
-
-    double totalDistance = 0.0;
-    int numPixels = img1.width * img1.height;
-
-    // Pré-calcul des strides en nombre de pixels
-    int stride1 = img1.stride / sizeof(rgb8);
-    int stride2 = img2.stride / sizeof(rgb8);
-
-    for (int y = 0; y < img1.height; ++y) {
-        rgb8* row1 = img1.buffer + y * stride1;
-        rgb8* row2 = img2.buffer + y * stride2;
-
-        for (int x = 0; x < img1.width; ++x) {
-            rgb8& pixel1 = row1[x];
-            rgb8& pixel2 = row2[x];
-
-            // Convertir les pixels RGB en Lab
-            Lab lab1 = rgbToLab(pixel1);
-            Lab lab2 = rgbToLab(pixel2);
-
-            // Calculer la distance ΔE
-            double distance = deltaE(lab1, lab2);
-            totalDistance += distance;
-            distances.push_back(distance);
-        }
-    }
-
-    double averageDistance = totalDistance / numPixels;
-    return std::make_tuple(averageDistance, distances);
-}
-
-void average(ImageView<rgb8>& img1, const ImageView<rgb8> img2) {
-  for (int y=0; y < img1.height; y++){
-    for (int x=0; x < img1.width; x++){
-      int index = y * img1.width + x * 3;
-      rgb8 pixel1 = img1.buffer[index];
-      rgb8 pixel2 = img2.buffer[index];
-
-      pixel1.r = (pixel1.r + pixel2.r) / 2;
-      pixel1.g = (pixel1.g + pixel2.g) / 2;
-      pixel1.b = (pixel1.b + pixel2.b) / 2;
-    }
-  }
 }
