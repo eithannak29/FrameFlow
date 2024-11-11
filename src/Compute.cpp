@@ -8,6 +8,12 @@
 #include <iostream>
 
 
+struct Lab{
+    double L;
+    double a;
+    double b;
+};
+
 /// Your cpp version of the algorithm
 /// This function is called by cpt_process_frame for each frame
 void compute_cpp(ImageView<rgb8> in);
@@ -20,6 +26,7 @@ void compute_cu(ImageView<rgb8> in);
 Image<rgb8> bg_value;
 Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
+bool initialized = false;
 
 double sRGBToLinear(double c) {
     if (c <= 0.04045)
@@ -95,16 +102,16 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 
 double background_estimation(ImageView<rgb8> in, int x, int y)
 {
-    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
-    rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.width);
-    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.width);
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+    rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
+    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
 
     double distance = deltaE(rgbToLab(pixel[x]), rgbToLab(bg_pixel[x]));
     bool match = distance < 25;
 
     // std::cout << "aled: " << distance << std::endl;
 
-    int *time = (int*)((std::byte*)time_since_match.buffer + y * time_since_match.width);
+    uint8_t *time = (uint8_t*)((std::byte*)time_since_match.buffer + y * time_since_match.stride);
 
     if (!match)
     {
@@ -148,10 +155,12 @@ void background_estimation_process(ImageView<rgb8> in)
     {
         for (int x = 0; x < in.width; ++x)
         {
+            // std::cout << "aled" << std::endl;
             double distance = background_estimation(in, x, y);
-            rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.width);
-            uint8_t intensity = static_cast<uint8_t>(std::min(255.0, distance * distanceMultiplier));
-                pixel[x].r = intensity;
+            // std::cout << "aled++" << std::endl;
+            rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+             
+            pixel[x].r = static_cast<uint8_t>(std::min(255.0, distance * distanceMultiplier));
         }
     }
 }
@@ -164,20 +173,17 @@ void compute_cpp(ImageView<rgb8> in)
   img.width = in.width;
   img.height = in.height;
   img.stride = in.stride;
-  if (bg_value.buffer == nullptr)
+  if (!initialized)
   {
-      std::cout << "aled" << std::endl; 
+      initialized = true;
       bg_value = img.clone();
       candidate_value = img.clone();
-      std::cout << "another" << std::endl;
       // init_background_model(in);
       uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
-      std::cout << "en vrai si je saute de ma fenêtre je meurs" << std::endl;
-      time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.stride};
+      time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
   }
-  std::cout << "ff" << std::endl;
+  std::cout << "out" << std::endl;
   // Image<rgb8> copy = img.clone();
-  std::cout << "py" << std::endl;
   background_estimation_process(in);
 }
 
