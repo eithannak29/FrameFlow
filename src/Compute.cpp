@@ -1,4 +1,5 @@
 #include "Compute.hpp"
+#include "filter.hpp"
 #include "Image.hpp"
 #include "logo.h"
 
@@ -183,6 +184,7 @@ void compute_cpp(ImageView<rgb8> in)
   }
   // Image<rgb8> copy = img.clone();
   background_estimation_process(in);
+  morphologicalOpening(in, 3);
 }
 
 
