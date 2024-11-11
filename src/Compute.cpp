@@ -58,7 +58,6 @@ void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z) {
     Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
     Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
 }
-
 // Fonction pour convertir XYZ en Lab
 Lab xyzToLab(double X, double Y, double Z) {
     // Blanc de référence D65
@@ -182,7 +181,6 @@ void compute_cpp(ImageView<rgb8> in)
       uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
       time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
   }
-  std::cout << "out" << std::endl;
   // Image<rgb8> copy = img.clone();
   background_estimation_process(in);
 }
