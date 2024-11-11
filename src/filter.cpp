@@ -36,9 +36,10 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
                     if (kernel[ky][kx] == 1) {
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
-                    
+
                         rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
                         min_pixel = std::min(min_pixel, kernel_pixel[nx].r);                      
+                        std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
                         }
                     }
                 }
@@ -55,10 +56,6 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
     ImageView<rgb8> copy = in;
     for (int y = radius; y < in.height - radius; ++y) {
         for (int x = radius; x < in.width - radius; ++x) {
-            rgb8& pixel = copy.buffer[y * in.width + x];
-            if(pixel.r != 0){
-                continue;
-            }
             uint8_t max_pixel = 0;
             for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
@@ -70,8 +67,10 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
                     }
                 }
             }
-            pixel = copy.buffer[y * copy.width + x];
-            pixel.r = max_pixel;
+            rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+            pixel[x].r = max_pixel;
+            std::cout << "val: " << max_pixel << std::endl;
+            
         }
     }
     in = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -82,7 +81,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
     int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
-    std::cout << "radius: " << radius << std::endl;
+    // std::cout << "radius: " << radius << std::endl;
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
