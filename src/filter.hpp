@@ -6,6 +6,6 @@
 
 
 // Appliquer une ouverture morphologique (érosion suivie de dilatation)
-void morphologicalOpening(ImageView<rgb8>& image, int radius);
+void morphologicalOpening(ImageView<rgb8> image, int radius);
 
 #endif // COLOR_UTILS_HPP

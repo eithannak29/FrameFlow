@@ -23,7 +23,7 @@ std::vector<std::vector<int>> createDiskKernel(int radius) {
 
 
 // Appliquer une opération d'érosion
-void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, int radius) {
+void erode(ImageView<rgb8> image, const std::vector<std::vector<int>>& kernel, int radius) {
     ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     for (int y = radius; y < image.height - radius; ++y) {
@@ -52,7 +52,7 @@ void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, 
     }
 
 // Appliquer une opération de dilatation
-void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, int radius) {
+void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
     int diameter = 2 * radius + 1;
     ImageView<rgb8> copy = in;
     for (int y = radius; y < in.height - radius; ++y) {
@@ -81,7 +81,7 @@ void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, in
 }
 
 // Ouverture morphologique (érosion suivie de dilatation)
-void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
+void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
     int radius = std::max(minradius, (min_dimension / 100) * ratio_disk); 
