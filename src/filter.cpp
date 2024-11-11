@@ -29,9 +29,6 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
     for (int y = radius; y < in.height - radius; ++y) {
         rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
         for (int x = radius; x < in.width - radius; ++x) {
-            if(pixel[x].r == 0){
-                continue;
-            }
             uint8_t min_pixel = 255;
             for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
@@ -77,7 +74,6 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
             pixel.r = max_pixel;
         }
     }
-    
     in = copy;  // Appliquer la copie modifiée à l'image d'origine
 }
 
@@ -85,8 +81,8 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
 void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk); 
-
+    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
+    std::cout << "radius: " << radius << std::endl;
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
