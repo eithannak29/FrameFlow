@@ -156,7 +156,10 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
         bg_pixel[x].b = (bg_pixel[x].b + pixel[x].b) / 2; 
         time[x] = 0;
     }
-    printf("Distance: %f\n", distance);
+    if distance > 0
+    {
+        printf("Distance: %f\n", distance);
+    }
     return distance;
 }
 
