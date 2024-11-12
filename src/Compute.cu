@@ -174,7 +174,7 @@ __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    pixel[x].r = myMinCuda(255, distance * distanceMultiplier);
+    pixel[x].r = static_cast<uint8_t>(myMinCuda(distance * distanceMultiplier, 255.0));
 
 }
 
