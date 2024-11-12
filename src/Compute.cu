@@ -9,6 +9,12 @@ struct Lab
     double L, a, b;
 };
 
+template <typename T>
+__device__ void mySwapCuda(T& a, T& b) {
+    T temp = a;
+    a = b;
+    b = temp;
+}
 // Single threaded version of the Method
 __global__ void mykernel(ImageView<rgb8> in, ImageView<uint8_t> logo)
 {
@@ -132,9 +138,9 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
         }
         else
         {
-            std::swap(bg_pixel[x].r, candidate_pixel[x].r);
-            std::swap(bg_pixel[x].g, candidate_pixel[x].g);
-            std::swap(bg_pixel[x].b, candidate_pixel[x].b);
+            mySwapCuda(bg_pixel[x].r, candidate_pixel[x].r);
+            mySwapCuda(bg_pixel[x].g, candidate_pixel[x].g);
+            mySwapCuda(bg_pixel[x].b, candidate_pixel[x].b);
             time[x] = 0;        
         }
     }
