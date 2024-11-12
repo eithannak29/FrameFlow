@@ -36,7 +36,6 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
     Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     for (int y = radius; y < in.height - radius; ++y) {
-        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
         for (int x = radius; x < in.width - radius; ++x) {
             uint8_t min_pixel = 255;
             for (int ky = 0; ky < diameter; ++ky) {
@@ -47,12 +46,12 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
                         int nx = x + kx - radius;
 
                         rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
-                        min_pixel = std::min(min_pixel, kernel_pixel[nx].r);                      
-                        std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
-                        }
+                        min_pixel = std::min(min_pixel, kernel_pixel[nx].r);
+                        
                     }
                 }
-          pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+            }
+          rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
           pixel[x].r = min_pixel;
           }
         }
@@ -71,18 +70,13 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
                     if (kernel[ky][kx] == 1){
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
-                        std::cout << "max_pixel: " << max_pixel << std::endl;
                         rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
                         max_pixel = std::max(max_pixel, kernel_pixel.r);
-                        std::cout << "val: " << (int)kernel_pixel.r << std::endl;
-                        std::cout << "max_pixel: " << max_pixel << std::endl;
                     }
                 }
             }
             rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
             pixel[x].r = max_pixel;
-            std::cout << "val: " << max_pixel << std::endl;
-            
         }
     }
     in = copy;  // Appliquer la copie modifiée à l'image d'origine
@@ -97,7 +91,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
-    // erode(in, diskKernel, radius);
+    erode(in, diskKernel, radius);
     // Étape 2 : Dilatation
     dilate(in, diskKernel, radius);
 }
