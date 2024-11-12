@@ -21,10 +21,19 @@ std::vector<std::vector<int>> createDiskKernel(int radius) {
     return kernel;
 }
 
+Image<rgb8> clone(ImageView<rgb8> in)
+{
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.width;
+    return img.clone();
+}
 
 // Appliquer une opération d'érosion
 void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
-    ImageView<rgb8> copy = in;  // Faire une copie temporaire de l'image pour éviter la corruption
+    Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
     for (int y = radius; y < in.height - radius; ++y) {
         rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
@@ -53,7 +62,7 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
 // Appliquer une opération de dilatation
 void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
     int diameter = 2 * radius + 1;
-    ImageView<rgb8> copy = in;
+    Image<rgb8> copy = clone(in);
     for (int y = radius; y < in.height - radius; ++y) {
         for (int x = radius; x < in.width - radius; ++x) {
             uint8_t max_pixel = 0;
