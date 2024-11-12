@@ -340,8 +340,8 @@ void compute_cu(ImageView<rgb8> in)
     
     // mykernel<<<grid, block>>>(device_background, device_logo);
 
-    ImageView<int> copy; 
-    cudaMemcpy(copy.buffer, in.buffer, in.width * in.height * sizeof(int), cudaMemcpyDeviceToDevice);
+    ImageView<rgb8> copy; 
+    cudaMemcpy(copy.buffer, in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice);
 
     background_estimation_process<<<grid, block>>>(device_in, device_background, device_candidate, pixel_time_counter, copy);
 
