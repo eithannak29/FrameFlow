@@ -136,9 +136,9 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
             candidate_pixel[x] = mean_pixel;
             time[x] += 1;
         } else if (time[x] < 100) {
-            candidate_pixel[x].r = (candidate_pixel[x].r + mean_pixel[x].r) / 2;
-            candidate_pixel[x].g = (candidate_pixel[x].g + mean_pixel[x].g) / 2;
-            candidate_pixel[x].b = (candidate_pixel[x].b + mean_pixel[x].b) / 2;
+            candidate_pixel[x].r = (candidate_pixel[x].r + mean_pixel.r) / 2;
+            candidate_pixel[x].g = (candidate_pixel[x].g + mean_pixel.g) / 2;
+            candidate_pixel[x].b = (candidate_pixel[x].b + mean_pixel.b) / 2;
             time[x] += 1;
         } else {
             mySwapCuda(bg_pixel[x].r, mean_pixel[x].r);
@@ -148,9 +148,9 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
         }
     } else {
         // Mise à jour progressive du fond avec interpolation pour un lissage
-        bg_pixel[x].r = static_cast<uint8_t>(bg_pixel[x].r * 0.9 + mean_pixel[x].r * 0.1);
-        bg_pixel[x].g = static_cast<uint8_t>(bg_pixel[x].g * 0.9 + mean_pixel[x].g * 0.1);
-        bg_pixel[x].b = static_cast<uint8_t>(bg_pixel[x].b * 0.9 + mean_pixel[x].b * 0.1);
+        bg_pixel[x].r = static_cast<uint8_t>(bg_pixel[x].r * 0.9 + mean_pixel.r * 0.1);
+        bg_pixel[x].g = static_cast<uint8_t>(bg_pixel[x].g * 0.9 + mean_pixel.g * 0.1);
+        bg_pixel[x].b = static_cast<uint8_t>(bg_pixel[x].b * 0.9 + mean_pixel.b * 0.1);
         time[x] = 0;
     }
 
