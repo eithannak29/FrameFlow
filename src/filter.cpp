@@ -48,7 +48,7 @@ void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int 
 
                         rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
                         min_pixel = std::min(min_pixel, kernel_pixel[nx].r);                      
-                        std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
+                        //std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
                         }
                     }
                 }
@@ -71,17 +71,17 @@ void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int
                     if (kernel[ky][kx] == 1){
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
-                        std::cout << "max_pixel: " << max_pixel << std::endl;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
                         rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
                         max_pixel = std::max(max_pixel, kernel_pixel.r);
-                        std::cout << "val: " << (int)kernel_pixel.r << std::endl;
-                        std::cout << "max_pixel: " << max_pixel << std::endl;
+                        //std::cout << "val: " << (int)kernel_pixel.r << std::endl;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
                     }
                 }
             }
             rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
             pixel[x].r = max_pixel;
-            std::cout << "val: " << max_pixel << std::endl;
+            //std::cout << "val: " << max_pixel << std::endl;
             
         }
     }
