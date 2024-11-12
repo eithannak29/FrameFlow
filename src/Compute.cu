@@ -15,6 +15,12 @@ __device__ void mySwapCuda(T& a, T& b) {
     a = b;
     b = temp;
 }
+
+template <typename T>
+__device__ T myMinCuda(T a, T b) {
+    return a < b ? a : b;
+}
+
 // Single threaded version of the Method
 __global__ void mykernel(ImageView<rgb8> in, ImageView<uint8_t> logo)
 {
@@ -169,7 +175,7 @@ __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    pixel[x].r = static_cast<uint8_t>(std::min(255.0, distance * distanceMultiplier));
+    pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
 }
 
 
