@@ -100,9 +100,8 @@ __device__ double deltaE_cuda(const Lab& lab1, const Lab& lab2) {
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-__device__ double background_estimation(ImageView<rgb8> in)
+__device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter)
 {
-
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -110,7 +109,7 @@ __device__ double background_estimation(ImageView<rgb8> in)
     rgb8* bg_pixel = (rgb8*)((std::byte*)device_background.buffer + y * device_background.stride);
     rgb8* candidate_pixel = (rgb8*)((std::byte*)device_candidate.buffer + y * device_candidate.stride);
 
-    double distance = deltaE(rgbToLab(pixel[x]), rgbToLab(bg_pixel[x]));
+    double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
     bool match = distance < 25;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
@@ -149,7 +148,7 @@ __device__ double background_estimation(ImageView<rgb8> in)
     return distance;
 }
 
-__global__ void background_estimation_process(ImageView<rgb8> in)
+__global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter)
 {
     const double treshold = 25;
     const double distanceMultiplier = 2.8;
@@ -160,7 +159,7 @@ __global__ void background_estimation_process(ImageView<rgb8> in)
     if (x >= in.width || y >= in.height)
         return;
 
-    double distance = background_estimation(in);
+    double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
@@ -203,7 +202,7 @@ void compute_cu(ImageView<rgb8> in)
     
     // mykernel<<<grid, block>>>(device_background, device_logo);
 
-    background_estimation_process<<<grid, block>>>(device_in);
+    background_estimation_process<<<grid, block>>>(device_in, device_background, device_candidate, pixel_time_counter);
     cudaDeviceSynchronize();
 
     // Copy the result back to the host
