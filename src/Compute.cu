@@ -223,7 +223,7 @@ __device__ int* createDiskKernel_cuda(int radius) {
 // }
 
 // Appliquer une opération d'érosion
-__device__ void morphological(ImageView<rgb8> in, Image<rgb8> copy, const int* kernel, int radius, bool erode) {
+__device__ void morphological(ImageView<rgb8> in, ImageView<rgb8> copy, const int* kernel, int radius, bool erode) {
     //Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
     
     int diameter = 2 * radius + 1;
@@ -258,7 +258,7 @@ __device__ void morphological(ImageView<rgb8> in, Image<rgb8> copy, const int* k
     }
 }
 
-__device__ void morphologicalOpening(ImageView<rgb8> in, Image<rgb8> copy, int minradius) {
+__device__ void morphologicalOpening(ImageView<rgb8> in, ImageView<rgb8> copy, int minradius) {
     int min_dimension = myMinCuda(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
     int radius = myMaxCuda(minradius, (min_dimension / 100) * ratio_disk);
@@ -271,7 +271,7 @@ __device__ void morphologicalOpening(ImageView<rgb8> in, Image<rgb8> copy, int m
     morphological(in, copy, diskKernel, radius, false);
 }
 
-__global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter, Image<rgb8> copy)
+__global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter, ImageView<rgb8> copy)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
