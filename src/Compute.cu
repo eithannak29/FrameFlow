@@ -4,6 +4,11 @@
 #include <iostream>
 
 
+struct Lab
+{
+    double L, a, b;
+};
+
 // Single threaded version of the Method
 __global__ void mykernel(ImageView<rgb8> in, ImageView<uint8_t> logo)
 {
