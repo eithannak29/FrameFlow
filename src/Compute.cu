@@ -296,7 +296,7 @@ __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8
     // Étape 1 : Erosion
     
 
-    morphologicalOpening(in, copy, 3);
+    //morphologicalOpening(in, copy, 3);
 
     //apply_filter<<<grid, block>>>(in, distance);
 }
@@ -341,7 +341,7 @@ void compute_cu(ImageView<rgb8> in)
     // mykernel<<<grid, block>>>(device_background, device_logo);
 
     Image<rgb8> copy(in.width, in.height, true); 
-    cudaMemcpy2D(copy.buffer, copy.stride, in.buffer, in.stride, in.width * sizeof(rgb8),in.height, cudaMemcpyDeviceToDevice);
+    cudaMemcpy2D(copy.buffer, copy.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
     background_estimation_process<<<grid, block>>>(device_in, device_background, device_candidate, pixel_time_counter, copy);
 
