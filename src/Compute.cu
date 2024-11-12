@@ -28,7 +28,7 @@ void compute_cu(ImageView<rgb8> in)
     static Image<uint8_t> device_logo;
     static Image<uint8_t> pixel_time_counter;
     static Image<rgb8> device_background;
-    static Image<rgb8> device_candidate
+    static Image<rgb8> device_candidate;
 
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
