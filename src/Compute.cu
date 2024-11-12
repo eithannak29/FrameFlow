@@ -107,8 +107,8 @@ __device__ double background_estimation(ImageView<rgb8> in)
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-    rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
-    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
+    rgb8* bg_pixel = (rgb8*)((std::byte*)device_background.buffer + y * device_background.stride);
+    rgb8* candidate_pixel = (rgb8*)((std::byte*)device_candidate.buffer + y * device_candidate.stride);
 
     double distance = deltaE(rgbToLab(pixel[x]), rgbToLab(bg_pixel[x]));
     bool match = distance < 25;
