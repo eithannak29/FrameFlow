@@ -122,7 +122,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
     rgb8* candidate_pixel = (rgb8*)((std::byte*)device_candidate.buffer + y * device_candidate.stride);
 
     double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
-    bool match = distance < 10;
+    bool match = distance < 25;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
 
@@ -135,7 +135,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
             candidate_pixel[x].b = pixel[x].b;
             time[x] += 1;
         }
-        else if (time[x] < 50)
+        else if (time[x] < 20)
         {
             candidate_pixel[x].r = (candidate_pixel[x].r + pixel[x].r) / 2;
             candidate_pixel[x].g = (candidate_pixel[x].g + pixel[x].g) / 2;
@@ -162,7 +162,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
 
 __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter)
 {
-    const double distanceMultiplier = 20.8;
+    const double distanceMultiplier = 2.8;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -174,7 +174,7 @@ __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    pixel[x].r = static_cast<uint8_t>(myMinCuda(distance * distanceMultiplier, 255.0));
+    pixel[x].r = static_cast<uint8_t>(255.0);
 
 }
 
