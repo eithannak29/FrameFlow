@@ -3,7 +3,6 @@
 #include "logo.h"
 #include <iostream>
 
-
 struct Lab
 {
     double L, a, b;
@@ -21,26 +20,10 @@ __device__ T myMinCuda(T a, T b) {
     return a < b ? a : b;
 }
 
-// Single threaded version of the Method
-__global__ void mykernel(ImageView<rgb8> in, ImageView<uint8_t> logo)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x < in.width && y < in.height)
-    {
-        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-        pixel[x].r = 0;
-
-        if (x < logo.width && y < logo.height)
-        {
-            float alpha = logo.buffer[y * logo.stride + x] / 255.f;
-            pixel[x].g = uint8_t(alpha * pixel[x].g + (1 - alpha) * 255);
-            pixel[x].b = uint8_t(alpha * pixel[x].b + (1 - alpha) * 255);
-        }
-    }
+template <typename T>
+__device__ T myMaxCuda(T a, T b) {
+    return a > b ? a : b;
 }
-
 
 __device__ double sRGBToLinear_cuda(double c) {
     if (c <= 0.04045)
@@ -118,11 +101,13 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-    rgb8* bg_pixel = (rgb8*)((std::byte*)device_background.buffer + y * device_background.stride);
+    rgb8* bg_pixel = (rgb8*)((std::byte*)device_background .buffer + y * device_background.stride);
     rgb8* candidate_pixel = (rgb8*)((std::byte*)device_candidate.buffer + y * device_candidate.stride);
 
     double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
-    bool match = distance < 5;
+    bool match = distance < 25;
+
+    // std::cout << "aled: " << distance << std::endl;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
 
@@ -135,7 +120,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
             candidate_pixel[x].b = pixel[x].b;
             time[x] += 1;
         }
-        else if (time[x] < 20)
+        else if (time[x] < 25)
         {
             candidate_pixel[x].r = (candidate_pixel[x].r + pixel[x].r) / 2;
             candidate_pixel[x].g = (candidate_pixel[x].g + pixel[x].g) / 2;
@@ -156,13 +141,13 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
         bg_pixel[x].b = (bg_pixel[x].b + pixel[x].b) / 2; 
         time[x] = 0;
     }
-
     return distance;
 }
 
-__global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter)
-{
+__device__ void apply_filter(ImageView<rgb8> in, double distance){
+
     const double distanceMultiplier = 2.8;
+    const double threshold = 3.5;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -170,12 +155,150 @@ __global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8
     if (x >= in.width || y >= in.height)
         return;
 
-    double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
-
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    pixel[x].r = static_cast<uint8_t>(myMinCuda(distance * distanceMultiplier, 255.0));
+    // if (distance > threshold)
+    // {
+    //     uint8_t intensity = static_cast<uint8_t>(myMinCuda(distance * distanceMultiplier, 255.0));
+    //     pixel[x].r = intensity;
+    //     pixel[x].g = intensity;
+    //     pixel[x].b = 0;
+    // }
+    // else
+    // {
+    //     pixel[x].r = 0;
+    //     pixel[x].g = 0;
+    //     pixel[x].b = 0;
+    // }
+             
+    pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
 
+}
+
+
+__device__ int* createDiskKernel_cuda(int radius) {
+    int diameter = 2 * radius + 1;
+    int* kernel = new int[diameter * diameter];
+    int center = radius;
+    
+    for (int i = 0; i < diameter; ++i) {
+        for (int j = 0; j < diameter; ++j) {
+            if (sqrtf((i - center) * (i - center) + (j - center) * (j - center)) <= radius) {
+                kernel[i * diameter + j] = 1;
+            }
+            else {
+                kernel[i * diameter + j] = 0;
+            }
+        }
+    }
+    return kernel;
+}
+
+// __global__ void createKernelDevice(int radius, int* kernel) {
+//     int diameter = 2 * radius + 1;
+//     //int* kernel = new int[diameter * diameter];
+//     int center = radius;
+    
+//     for (int i = 0; i < diameter; ++i) {
+//         for (int j = 0; j < diameter; ++j) {
+//             if (sqrtf((i - center) * (i - center) + (j - center) * (j - center)) <= radius) {
+//                 kernel[i * diameter + j] = 1;
+//             }
+//             else {
+//                 kernel[i * diameter + j] = 0;
+//             }
+//         }
+//     }
+// }
+
+// __device__ Image<rgb8> clone(ImageView<rgb8> in)
+// {
+//     Image<rgb8> img = Image<rgb8>();
+//     img.buffer = in.buffer;
+//     img.width = in.width;
+//     img.height = in.height;
+//     img.stride = in.width;
+//     //return img.clone();
+
+// }
+
+// Appliquer une opération d'érosion
+__device__ void morphological(ImageView<rgb8> in, ImageView<rgb8> copy, const int* kernel, int radius, bool erode) {
+    //Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
+    
+    int diameter = 2 * radius + 1;
+    
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    // Vérifiez si (x, y) est dans les limites et respecte le rayon
+    if (x >= radius && x < (in.width - radius) && y >= radius && y < (in.height - radius)) {
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+        
+        uint8_t new_value = (erode) ? 255 : 0;
+        for (int ky = 0; ky < diameter; ++ky) {
+            for (int kx = 0; kx < diameter; ++kx) {
+
+                if (kernel[ky * diameter + kx] == 1) {
+                    int ny = y + ky - radius;
+                    int nx = x + kx - radius;
+
+                    rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
+                    if (erode){
+                        new_value = myMinCuda(new_value, kernel_pixel[nx].r);
+                    }
+                    else {
+                        new_value = myMaxCuda(new_value, kernel_pixel[nx].r);   
+                    }                 
+                }
+            }
+        }
+        pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+        pixel[x].r = new_value;
+    }
+}
+
+__device__ void morphologicalOpening(ImageView<rgb8> in, ImageView<rgb8> copy, int minradius) {
+    int min_dimension = myMinCuda(in.width, in.height);
+    int ratio_disk = 1; // 1 % de la resolution de l'image
+    int radius = myMaxCuda(minradius, (min_dimension / 100) * ratio_disk);
+    // std::cout << "radius: " << radius << std::endl;
+    // Créer un noyau en forme de disque avec le rayon calculé
+    auto diskKernel = createDiskKernel_cuda(radius);
+    // Étape 1 : Erosion
+    morphological(in, copy, diskKernel, radius, true);
+    // Étape 2 : Dilatation
+    morphological(in, copy, diskKernel, radius, false);
+}
+
+__global__ void background_estimation_process(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter, ImageView<rgb8> copy)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    // dim3 block(16, 16);
+    // dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
+
+    if (x >= in.width || y >= in.height)
+        return;
+
+    double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
+    // if (distance > 1) {
+    //     printf("distance: %f\n", distance);
+    // }
+    //rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+    //pixel[x].r = static_cast<uint8_t>(myMinCuda(distance * distanceMultiplier, 255.0));
+
+    apply_filter(in, distance);
+
+
+    // Étape 1 : Erosion
+    
+
+    morphologicalOpening(in, copy, 3);
+
+    //apply_filter<<<grid, block>>>(in, distance);
 }
 
 
@@ -188,6 +311,9 @@ void compute_cu(ImageView<rgb8> in)
 
     dim3 block(16, 16);
     dim3 grid((in.width + block.x - 1) / block.x, (in.height + block.y - 1) / block.y);
+
+    // Create a copy of the input image
+    //----------
     
     // Copy the logo to the device if it is not already there
     if (device_logo.buffer == nullptr)
@@ -214,9 +340,22 @@ void compute_cu(ImageView<rgb8> in)
     
     // mykernel<<<grid, block>>>(device_background, device_logo);
 
-    background_estimation_process<<<grid, block>>>(device_in, device_background, device_candidate, pixel_time_counter);
+    ImageView<rgb8> copy; 
+    cudaMemcpy(copy.buffer, in.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice);
+
+    background_estimation_process<<<grid, block>>>(device_in, device_background, device_candidate, pixel_time_counter, copy);
+    cudaError_t err = cudaGetLastError();
+    // if (err != cudaSuccess) {
+    //     printf("CUDA error: %s\n", cudaGetErrorString(err));
+    // }
     cudaDeviceSynchronize();
 
+
+    
+
+    //cudaMemcpy(device_in.buffer, device_in.stride, copy.buffer, in.width * in.height * sizeof(rgb8), cudaMemcpyDeviceToDevice);
+
     // Copy the result back to the host
-    cudaMemcpy2D(in.buffer, in.stride, device_background.buffer, device_background.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    //cudaMemcpy2D(in.buffer, in.stride, device_background.buffer, device_background.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 }
