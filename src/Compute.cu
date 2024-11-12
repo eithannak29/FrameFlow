@@ -141,9 +141,9 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
             candidate_pixel[x].b = (candidate_pixel[x].b + mean_pixel.b) / 2;
             time[x] += 1;
         } else {
-            mySwapCuda(bg_pixel[x].r, mean_pixel[x].r);
-            mySwapCuda(bg_pixel[x].g, mean_pixel[x].g);
-            mySwapCuda(bg_pixel[x].b, mean_pixel[x].b);
+            mySwapCuda(bg_pixel[x].r, mean_pixel.r);
+            mySwapCuda(bg_pixel[x].g, mean_pixel.g);
+            mySwapCuda(bg_pixel[x].b, mean_pixel.b);
             time[x] = 0;
         }
     } else {
