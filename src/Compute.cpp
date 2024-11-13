@@ -7,6 +7,7 @@
 #include <cmath>
 #include <thread>
 #include <iostream>
+#include <vector>
 
 
 struct Lab{
