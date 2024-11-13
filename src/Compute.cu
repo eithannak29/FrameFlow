@@ -249,7 +249,7 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     }
 }
 
-__global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, *bool hasChanged) {
+__global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -258,9 +258,9 @@ __global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
 
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    if (pixel.r == 255) {
+    if (pixel[x].r == 255) {
         // Vérifier si un voisin est un bord fort
-        for (int dy = -1; dy <= 1 && !hasStrongEdgeNeighbor; dy++) {
+        for (int dy = -1; dy <= 1 && !*hasChanged; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 if (dx == 0 && dy == 0) continue;
 
@@ -269,7 +269,7 @@ __global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
 
                 if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
                     rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
-                    int neighborIntensity = neighborPixel[neighborX].r
+                    int neighborIntensity = neighborPixel[neighborX].r;
                     if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) { // Bord fort
                         neighborPixel[neighborX] = {255, 255, 255};
                         *hasChanged = true;
