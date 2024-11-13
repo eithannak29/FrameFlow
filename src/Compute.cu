@@ -308,8 +308,8 @@ __global__ void background_estimation_process(
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
 
-    double lowThreshold = 20;
-    double highThreshold = 40;
+    double lowThreshold = 50;
+    double highThreshold = 100;
 
     hysteresis_threshold_process(in, lowThreshold, highThreshold);
     propagate_edges(in, lowThreshold, highThreshold);
