@@ -249,6 +249,44 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     }
 }
 
+__device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= in.width || y >= in.height)
+        return;
+
+    // Traiter uniquement les candidats potentiels (gris)
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+    if (pixel[x].r == 127 && pixel[x].g == 127 && pixel[x].b == 127) {
+        // Vérifier si un voisin est un bord fort
+        bool hasStrongEdgeNeighbor = false;
+        for (int dy = -1; dy <= 1 && !hasStrongEdgeNeighbor; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int neighborX = x + dx;
+                int neighborY = y + dy;
+
+                if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+                    rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
+                    if (neighborPixel[neighborX].r == 255) { // Bord fort
+                        hasStrongEdgeNeighbor = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (hasStrongEdgeNeighbor) {
+            pixel[x] = {255, 255, 255};
+        } else {
+            pixel[x] = {0, 0, 0};
+        }
+    }
+}
+
+
 __global__ void background_estimation_process(
     ImageView<rgb8> in,
     ImageView<rgb8> device_background,
@@ -274,6 +312,7 @@ __global__ void background_estimation_process(
     double highThreshold = 40;
 
     hysteresis_threshold_process(in, lowThreshold, highThreshold);
+    propagate_edges(in, lowThreshold, highThreshold);
 }
 
 void compute_cu(ImageView<rgb8> in)

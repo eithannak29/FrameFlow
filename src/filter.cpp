@@ -102,7 +102,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     dilate(in, diskKernel, radius);
 }
 
-ImageView<rgb8> HysteresisThresholdWithBackgroundEstimation(ImageView<rgb8> in, double distanceMultiplier) {
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, double distanceMultiplier) {
   const int lowThreshold = 10; 
   const int highThreshold = 35;
 

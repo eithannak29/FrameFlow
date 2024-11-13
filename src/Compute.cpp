@@ -220,7 +220,7 @@ void compute_cpp(ImageView<rgb8> in)
   morphologicalOpening(in, 3);
 
   double distanceMultiplier = 2.8;
-  HysteresisThresholdWithBackgroundEstimation(in, distanceMultiplier)
+  HysteresisThreshold(in, distanceMultiplier)
 }
 
 
