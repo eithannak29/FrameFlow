@@ -289,7 +289,7 @@ __device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
     return hasStrongEdgeNeighbor;
 }
 
-__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold,) {
+__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
     bool hasEdge = true;
     while (hasEdge) {
         hasEdge = propagate_edges(in, lowThreshold, highThreshold);
