@@ -290,7 +290,10 @@ __device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
 }
 
 __global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold,) {
-    edge = propagate_edges(in, lowThreshold, highThreshold);
+    bool hasEdge = true;
+    while (hasEdge) {
+        hasEdge = propagate_edges(in, lowThreshold, highThreshold);
+    }
 }
 
 __global__ void background_estimation_process(
