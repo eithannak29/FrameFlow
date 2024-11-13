@@ -325,11 +325,6 @@ __global__ void background_estimation_process(
     apply_filter(in, distance);
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
-
-    double lowThreshold = 20;
-    double highThreshold = 50;
-
-    hysteresis_threshold_process(in, lowThreshold, highThreshold);
 }
 
 void compute_cu(ImageView<rgb8> in)
