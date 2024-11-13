@@ -195,6 +195,14 @@ void background_estimation_process(ImageView<rgb8> in)
     }
 }
 
+template <class T>
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
+    int totalSize = width * height; // Nombre total de pixels
+    std::vector<T> pixelArray(totalSize); // Création du tableau avec la taille appropriée
+    std::copy(sourceBuffer, sourceBuffer + totalSize, pixelArray.begin()); // Copie des pixels
+    return pixelArray;
+}
+
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
@@ -215,12 +223,16 @@ void compute_cpp(ImageView<rgb8> in)
       uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
       time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
   }
+
+   std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
+
   // Image<rgb8> copy = img.clone();
   background_estimation_process(in);
   morphologicalOpening(in, 3);
 
-  double distanceMultiplier = 2.8;
-  HysteresisThreshold(in, distanceMultiplier);
+  ImageView<rgb8> mask = HysteresisThreshold(in);
+
+  in = applyRedMask(in, mask, initialPixels);
 }
 
 

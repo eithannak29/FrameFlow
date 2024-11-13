@@ -102,27 +102,26 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     dilate(in, diskKernel, radius);
 }
 
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, double distanceMultiplier) {
-  const int lowThreshold = 10; 
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+  const int lowThreshold = 15; 
   const int highThreshold = 35;
 
+  // Créer une queue pour propager les pixels de bord fort
   std::queue<std::pair<int, int>> edgeQueue;
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
-      double distance = background_estimation(in, x, y);
-      int intensity = static_cast<int>(std::min(255.0, distance * distanceMultiplier));
-
       int index = y * in.width + x;
-      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+      rgb8 pixel = in.buffer[index];
+      int intensity = pixel.r;
 
       if (intensity >= highThreshold) {
-        pixel[x] = {255, 255, 255};
+        in.buffer[index] = {255, 255, 255};
         edgeQueue.push({x, y});
       } else if (intensity < lowThreshold) {
-        pixel[x] = {0, 0, 0};
+        in.buffer[index] = {0, 0, 0};
       } else {
-        pixel[x] = {127, 127, 127};
+        in.buffer[index] = {127, 127, 127};
       }
     }
   }
@@ -140,13 +139,12 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, double distanceMultiplie
 
         if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
           int neighborIndex = neighborY * in.width + neighborX;
-          rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
+          rgb8& neighborPixel = in.buffer[neighborIndex];
 
-          double neighborDistance = background_estimation(in, neighborX, neighborY);
-          int neighborIntensity = static_cast<int>(std::min(255.0, neighborDistance * distanceMultiplier));
+          int neighborIntensity = neighborPixel.r;
 
-          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r != 255) {
-            neighborPixel[neighborX] = {255, 255, 255};
+          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
+            neighborPixel = {255, 255, 255};
             edgeQueue.push({neighborX, neighborY});
           }
         }
@@ -157,10 +155,29 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, double distanceMultiplie
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
-      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+      rgb8& pixel = in.buffer[index];
 
-      if (pixel[x].r == 127 && pixel[x].g == 127 && pixel[x].b == 127) {
-        pixel[x] = {0, 0, 0};
+      if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
+        pixel = {0, 0, 0};
+      }
+    }
+  }
+
+  return in;
+}
+
+ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels) {
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+
+      if (mask.buffer[index].r > 0) {
+        in.buffer[index].r = std::min(255, static_cast<int>(initialPixels[index].r + 0.5 * 255));
+        in.buffer[index].g = initialPixels[index].g;
+        in.buffer[index].b = initialPixels[index].b;
+      }
+      else {
+        in.buffer[index] = initialPixels[index];
       }
     }
   }
