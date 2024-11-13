@@ -249,7 +249,7 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     }
 }
 
-__global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
+__device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -277,6 +277,31 @@ __global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
                 }
             }
         }
+    }
+}
+
+__global__ void hysteresis(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+    hysteresis_threshold_process(in, lowThreshold, highThreshold);
+
+    // Propagate edges
+    bool updated;
+    do {
+        updated = false;
+        propagate_edges<<<grid, block>>>(in, lowThreshold, highThreshold, &updated);
+    } while (updated);
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= in.width || y >= in.height)
+        return;
+
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+    if (pixel[x].r == 127) {
+        pixel[x].r = 0;
+        pixel[x].g = 0;
+        pixel[x].b = 0;
     }
 }
 
@@ -392,21 +417,9 @@ void compute_cu(ImageView<rgb8> in)
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     //cudaDeviceSynchronize();
 
-    bool* d_updated;
-    bool updated;
-
-    do {
-        updated = false;
-        cudaMemcpy(d_updated, &updated, sizeof(bool), cudaMemcpyHostToDevice);
-
-        //edgeDetectionKernel<<<gridSize, blockSize>>>(d_buffer, in.width, in.height, lowThreshold, highThreshold, d_updated);
-        propagate_edges<<<grid, block>>>(device_in, 20, 50, d_updated);
-
-        cudaMemcpy(&updated, d_updated, sizeof(bool), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
-    } while (updated);
-
-
+    hysteresis<<<grid, block>>>(device_in, 20, 50);
+    cudaDeviceSynchronize();
+    
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
