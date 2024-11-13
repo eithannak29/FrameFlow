@@ -287,7 +287,7 @@ __global__ void hysteresis(ImageView<rgb8> in, int lowThreshold, int highThresho
     bool updated;
     do {
         updated = false;
-        propagate_edges<<<grid, block>>>(in, lowThreshold, highThreshold, &updated);
+        propagate_edges(in, lowThreshold, highThreshold, &updated);
     } while (updated);
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -419,7 +419,7 @@ void compute_cu(ImageView<rgb8> in)
 
     hysteresis<<<grid, block>>>(device_in, 20, 50);
     cudaDeviceSynchronize();
-    
+
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
