@@ -101,3 +101,69 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     // Étape 2 : Dilatation
     dilate(in, diskKernel, radius);
 }
+
+ImageView<rgb8> HysteresisThresholdWithBackgroundEstimation(ImageView<rgb8> in, double distanceMultiplier) {
+  const int lowThreshold = 10; 
+  const int highThreshold = 35;
+
+  std::queue<std::pair<int, int>> edgeQueue;
+
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      double distance = background_estimation(in, x, y);
+      int intensity = static_cast<int>(std::min(255.0, distance * distanceMultiplier));
+
+      int index = y * in.width + x;
+      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+      if (intensity >= highThreshold) {
+        pixel[x] = {255, 255, 255};
+        edgeQueue.push({x, y});
+      } else if (intensity < lowThreshold) {
+        pixel[x] = {0, 0, 0};
+      } else {
+        pixel[x] = {127, 127, 127};
+      }
+    }
+  }
+
+  while (!edgeQueue.empty()) {
+    auto [x, y] = edgeQueue.front();
+    edgeQueue.pop();
+
+    for (int dy = -1; dy <= 1; dy++) {
+      for (int dx = -1; dx <= 1; dx++) {
+        if (dx == 0 && dy == 0) continue;
+
+        int neighborX = x + dx;
+        int neighborY = y + dy;
+
+        if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+          int neighborIndex = neighborY * in.width + neighborX;
+          rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
+
+          double neighborDistance = background_estimation(in, neighborX, neighborY);
+          int neighborIntensity = static_cast<int>(std::min(255.0, neighborDistance * distanceMultiplier));
+
+          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r != 255) {
+            neighborPixel[neighborX] = {255, 255, 255};
+            edgeQueue.push({neighborX, neighborY});
+          }
+        }
+      }
+    }
+  }
+
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+      if (pixel[x].r == 127 && pixel[x].g == 127 && pixel[x].b == 127) {
+        pixel[x] = {0, 0, 0};
+      }
+    }
+  }
+
+  return in;
+}

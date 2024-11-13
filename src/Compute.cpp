@@ -218,6 +218,9 @@ void compute_cpp(ImageView<rgb8> in)
   // Image<rgb8> copy = img.clone();
   background_estimation_process(in);
   morphologicalOpening(in, 3);
+
+  double distanceMultiplier = 2.8;
+  HysteresisThresholdWithBackgroundEstimation(in, distanceMultiplier)
 }
 
 
