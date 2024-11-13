@@ -225,8 +225,6 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    printf("test\n");
-
     if (x >= in.width || y >= in.height)
         return;
 
