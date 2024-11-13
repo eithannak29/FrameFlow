@@ -249,18 +249,19 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     }
 }
 
-__device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+__device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= in.width || y >= in.height)
         return;
 
+    bool hasStrongEdgeNeighbor = false;
+
     // Traiter uniquement les candidats potentiels (gris)
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
     if (pixel[x].r == 127 && pixel[x].g == 127 && pixel[x].b == 127) {
         // Vérifier si un voisin est un bord fort
-        bool hasStrongEdgeNeighbor = false;
         for (int dy = -1; dy <= 1 && !hasStrongEdgeNeighbor; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 if (dx == 0 && dy == 0) continue;
@@ -284,8 +285,16 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
             pixel[x] = {0, 0, 0};
         }
     }
+
+    return true;
 }
 
+__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+    bool edge = true;
+    while (edge) {
+        edge = propagate_edges(in, lowThreshold, highThreshold);
+    }
+}
 
 __global__ void background_estimation_process(
     ImageView<rgb8> in,
@@ -308,11 +317,10 @@ __global__ void background_estimation_process(
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
 
-    double lowThreshold = 50;
-    double highThreshold = 100;
+    double lowThreshold = 20;
+    double highThreshold = 50;
 
     hysteresis_threshold_process(in, lowThreshold, highThreshold);
-    propagate_edges(in, lowThreshold, highThreshold);
 }
 
 void compute_cu(ImageView<rgb8> in)
@@ -395,6 +403,9 @@ void compute_cu(ImageView<rgb8> in)
         diameter);
 
     // Synchronize and check for errors
+    cudaDeviceSynchronize();
+
+    propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     cudaDeviceSynchronize();
 
 
