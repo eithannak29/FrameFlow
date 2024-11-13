@@ -286,14 +286,11 @@ __device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
         }
     }
 
-    return true;
+    return hasStrongEdgeNeighbor;
 }
 
-__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
-    bool edge = true;
-    while (edge) {
-        edge = propagate_edges(in, lowThreshold, highThreshold);
-    }
+__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold,) {
+    edge = propagate_edges(in, lowThreshold, highThreshold);
 }
 
 __global__ void background_estimation_process(
