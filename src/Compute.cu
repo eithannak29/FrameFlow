@@ -399,7 +399,8 @@ void compute_cu(ImageView<rgb8> in)
         updated = false;
         cudaMemcpy(d_updated, &updated, sizeof(bool), cudaMemcpyHostToDevice);
 
-        edgeDetectionKernel<<<gridSize, blockSize>>>(d_buffer, in.width, in.height, lowThreshold, highThreshold, d_updated);
+        //edgeDetectionKernel<<<gridSize, blockSize>>>(d_buffer, in.width, in.height, lowThreshold, highThreshold, d_updated);
+        propagate_edges<<<grid, block>>>(device_in, 20, 50, d_updated);
 
         cudaMemcpy(&updated, d_updated, sizeof(bool), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
