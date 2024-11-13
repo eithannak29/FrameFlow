@@ -249,18 +249,16 @@ __device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshol
     }
 }
 
-__device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+__global__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, *bool hasChanged) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= in.width || y >= in.height)
         return;
 
-    bool hasStrongEdgeNeighbor = false;
-
-    // Traiter uniquement les candidats potentiels (gris)
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-    if (pixel[x].r == 127 && pixel[x].g == 127 && pixel[x].b == 127) {
+
+    if (pixel.r == 255) {
         // Vérifier si un voisin est un bord fort
         for (int dy = -1; dy <= 1 && !hasStrongEdgeNeighbor; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
@@ -271,28 +269,14 @@ __device__ bool propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
 
                 if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
                     rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
-                    if (neighborPixel[neighborX].r == 255) { // Bord fort
-                        hasStrongEdgeNeighbor = true;
-                        break;
+                    int neighborIntensity = neighborPixel[neighborX].r
+                    if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) { // Bord fort
+                        neighborPixel[neighborX] = {255, 255, 255};
+                        *hasChanged = true;
                     }
                 }
             }
         }
-
-        if (hasStrongEdgeNeighbor) {
-            pixel[x] = {255, 255, 255};
-        } else {
-            pixel[x] = {0, 0, 0};
-        }
-    }
-
-    return hasStrongEdgeNeighbor;
-}
-
-__global__ void propagate_edges_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
-    bool hasEdge = true;
-    while (hasEdge) {
-        hasEdge = propagate_edges(in, lowThreshold, highThreshold);
     }
 }
 
@@ -407,6 +391,19 @@ void compute_cu(ImageView<rgb8> in)
 
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     //cudaDeviceSynchronize();
+
+    bool* d_updated;
+    bool updated;
+
+    do {
+        updated = false;
+        cudaMemcpy(d_updated, &updated, sizeof(bool), cudaMemcpyHostToDevice);
+
+        edgeDetectionKernel<<<gridSize, blockSize>>>(d_buffer, in.width, in.height, lowThreshold, highThreshold, d_updated);
+
+        cudaMemcpy(&updated, d_updated, sizeof(bool), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+    } while (updated);
 
 
     // Copy the result back to the host
