@@ -221,7 +221,7 @@ __device__ void morphologicalOpening(
     morphological(copy, in, diskKernel, radius, diameter, false);
 }
 
-__global__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+__device__ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -271,6 +271,11 @@ __global__ void background_estimation_process(
     apply_filter(in, distance);
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
+
+    double lowThreshold = 20;
+    double highThreshold = 40;
+
+    hysteresis_threshold_process(in, lowThreshold, highThreshold);
 }
 
 void compute_cu(ImageView<rgb8> in)
@@ -359,13 +364,11 @@ void compute_cu(ImageView<rgb8> in)
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
-    double lowThreshold = 20;
-    double highThreshold = 40;
 
-    hysteresis_threshold_process<<<grid, block>>>(in, lowThreshold, highThreshold);
-    cudaDeviceSynchronize();
+    // hysteresis_threshold_process<<<grid, block>>>(in, lowThreshold, highThreshold);
+    // cudaDeviceSynchronize();
 
-    cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
+    // cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
 
     // Free device memory for the kernel
