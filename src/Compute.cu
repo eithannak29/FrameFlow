@@ -405,8 +405,8 @@ void compute_cu(ImageView<rgb8> in)
     // Synchronize and check for errors
     cudaDeviceSynchronize();
 
-    propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
-    cudaDeviceSynchronize();
+    //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
+    //cudaDeviceSynchronize();
 
 
     // Copy the result back to the host
