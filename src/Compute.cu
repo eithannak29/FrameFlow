@@ -359,6 +359,9 @@ void compute_cu(ImageView<rgb8> in)
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
+    double lowThreshold = 20;
+    double highThreshold = 40;
+
     hysteresis_threshold_process<<<grid, block>>>(in, lowThreshold, highThreshold);
     cudaDeviceSynchronize();
 
