@@ -2,7 +2,7 @@
 builddir := ~/build
 outputdir := outputs
 outputfile := $(outputdir)/acet_bg_cuda.mp4
-mode := cpu #gpu
+mode := gpu #cpu #gpu
 build_type := Debug
 default_video := samples/ACET.mp4
 
