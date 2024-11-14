@@ -32,7 +32,6 @@ ImageView<uint8_t> time_since_match;
 
 bool initialized = false;
 const int FRAMES = 268; //268 380 580;
-int frame_counter = 0;
 double total_time_elapsed = 0.0; 
 
 void show_progress(int current, int total) {
@@ -209,8 +208,6 @@ std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
-  show_progress(frame_counter, FRAMES);
-  frame_counter++;
 
   Image<rgb8> img = Image<rgb8>();
   img.buffer = in.buffer;
@@ -260,7 +257,7 @@ extern "C" {
       compute_cpp(img);
     else if (g_params.device == e_device_t::GPU)
       compute_cu(img);
-      
+
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     total_time_elapsed += elapsed.count();
