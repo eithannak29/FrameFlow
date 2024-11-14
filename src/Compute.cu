@@ -391,7 +391,7 @@ void compute_cu(ImageView<rgb8> in)
 
     //copy Initial Pixel
     Image<rgb8> Initialcopy(in.width, in.height, true);
-    cudaMemcpy2D(Initialcopy.buffer, Initialcopy.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
+    cudaMemcpy2D(Initialcopy.buffer, Initialcopy.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
 
 
     // Create a copy of the input image for morphological operations
