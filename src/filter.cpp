@@ -126,42 +126,42 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
     }
   }
 
-  while (!edgeQueue.empty()) {
-    auto [x, y] = edgeQueue.front();
-    edgeQueue.pop();
+//   while (!edgeQueue.empty()) {
+//     auto [x, y] = edgeQueue.front();
+//     edgeQueue.pop();
 
-    for (int dy = -1; dy <= 1; dy++) {
-      for (int dx = -1; dx <= 1; dx++) {
-        if (dx == 0 && dy == 0) continue;
+//     for (int dy = -1; dy <= 1; dy++) {
+//       for (int dx = -1; dx <= 1; dx++) {
+//         if (dx == 0 && dy == 0) continue;
 
-        int neighborX = x + dx;
-        int neighborY = y + dy;
+//         int neighborX = x + dx;
+//         int neighborY = y + dy;
 
-        if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
-          int neighborIndex = neighborY * in.width + neighborX;
-          rgb8& neighborPixel = in.buffer[neighborIndex];
+//         if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+//           int neighborIndex = neighborY * in.width + neighborX;
+//           rgb8& neighborPixel = in.buffer[neighborIndex];
 
-          int neighborIntensity = neighborPixel.r;
+//           int neighborIntensity = neighborPixel.r;
 
-          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
-            neighborPixel = {255, 255, 255};
-            edgeQueue.push({neighborX, neighborY});
-          }
-        }
-      }
-    }
-  }
+//           if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
+//             neighborPixel = {255, 255, 255};
+//             edgeQueue.push({neighborX, neighborY});
+//           }
+//         }
+//       }
+//     }
+//   }
 
-  for (int y = 0; y < in.height; y++) {
-    for (int x = 0; x < in.width; x++) {
-      int index = y * in.width + x;
-      rgb8& pixel = in.buffer[index];
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       rgb8& pixel = in.buffer[index];
 
-      if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
-        pixel = {0, 0, 0};
-      }
-    }
-  }
+//       if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
+//         pixel = {0, 0, 0};
+//       }
+//     }
+//   }
 
   return in;
 }

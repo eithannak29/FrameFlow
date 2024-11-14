@@ -412,8 +412,8 @@ void compute_cu(ImageView<rgb8> in)
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     //cudaDeviceSynchronize();
 
-    hysteresis<<<grid, block>>>(device_in, 5, 25);
-    cudaDeviceSynchronize();
+    //hysteresis<<<grid, block>>>(device_in, 5, 25);
+    //cudaDeviceSynchronize();
 
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
