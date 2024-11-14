@@ -124,7 +124,7 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 
 double background_estimation(ImageView<rgb8> in, int x, int y)
 {
-    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+    //rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
     rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
     rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
 
@@ -181,7 +181,7 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
 
 void background_estimation_process(ImageView<rgb8> in)
 {
-    const double treshold = 25;
+ //   const double treshold = 25;
     const double distanceMultiplier = 2.8;
 
     for (int y = 0; y < in.height; ++y)
