@@ -258,6 +258,9 @@ extern "C" {
       compute_cpp(img);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
+      total_time_elapsed+= elapsed.count();
+      if (frame_counter == FRAMES)
+          std::cout << "Total time CPU: " << total_time_elapsed << "s" << std::endl;
     }
     else if (g_params.device == e_device_t::GPU)
     {
@@ -265,11 +268,11 @@ extern "C" {
       compute_cu(img);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
-      
-    total_time_elapsed+= elapsed.count();
-    if (frame_counter == FRAMES)
-        std::cout << "Total time: " << total_time_elapsed << "s" << std::endl;
-    
+      total_time_elapsed+= elapsed.count();
+      if (frame_counter == FRAMES)
+          std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
+    }
 
+    std::cout << "Frame " << frame_counter << std::endl;
+  }
 }
-}}
