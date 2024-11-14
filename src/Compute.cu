@@ -322,7 +322,11 @@ __global__ void background_estimation_process(
         return;
 
     double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
-    apply_filter(in, distance);
+    
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+    pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
+    
+    //apply_filter(in, distance);
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
