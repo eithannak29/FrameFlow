@@ -244,6 +244,8 @@ extern "C" {
 
   static Parameters g_params;
 
+  static int frame_counter_bench = 0;
+
   void cpt_init(Parameters* params)
   {
     g_params = *params;
@@ -259,7 +261,7 @@ extern "C" {
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
       total_time_elapsed+= elapsed.count();
-      if (frame_counter == FRAMES)
+      if (frame_counter_bench == FRAMES)
           std::cout << "Total time CPU: " << total_time_elapsed << "s" << std::endl;
     }
     else if (g_params.device == e_device_t::GPU)
@@ -269,10 +271,10 @@ extern "C" {
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
       total_time_elapsed+= elapsed.count();
-      if (frame_counter == FRAMES)
+      if (frame_counter_bench == FRAMES)
           std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
     }
-
-    std::cout << "Frame " << frame_counter << std::endl;
+    frame_counter_bench++;
+    std::cout << "Frame " << frame_counter_bench << std::endl;
   }
 }
