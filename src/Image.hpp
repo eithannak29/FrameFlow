@@ -22,6 +22,8 @@ struct ImageView
 };
 
 
+
+
 // Class that owns data
 template <class T>
 struct Image : ImageView<T>
@@ -67,8 +69,8 @@ Image<T>::Image(int width, int height, bool device)
     this->stride = pitch;
     this->deleter = cudaDelete;
   } else {
-    this->buffer = (T*)malloc(this->height * this->stride);
     this->stride = width * sizeof(T);
+    this->buffer = (T*)malloc(this->height * this->stride);
     this->deleter = free;
   }
 }

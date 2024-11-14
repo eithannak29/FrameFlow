@@ -21,130 +21,115 @@ std::vector<std::vector<int>> createDiskKernel(int radius) {
     return kernel;
 }
 
+Image<rgb8> clone(ImageView<rgb8> in)
+{
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.width;
+    return img.clone();
+}
 
 // Appliquer une opération d'érosion
-void erode(ImageView<rgb8>& image, const std::vector<std::vector<int>>& kernel, int radius) {
-    ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
+void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
+    Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
     int diameter = 2 * radius + 1;
-    // std::cout << image.stride << "height " << image.height << "width" << image.width << std::endl;
-    for (int y = radius; y < image.height - radius; ++y) {
-        for (int x = radius; x < image.width - radius; ++x) {
-            // std::cout << "before pixel" << std::endl;
-            // std::cout << "before pixel" << std::endl;
-            //if (y   <0 || y  >= image.height || x < 0 || x >= image.width){
-            // if (y * image.stride + x >= image.height * image.width){
-            // std::cout << "Index out of bounds : (y: " << y << ", x: " << x << ")" << std::endl;
-            //}
-            rgb8& pixel = image.buffer[y * image.width + x];
-            //std::cout << "x: " << x << " y: " << y << " aled:" << (image.width * y + x) << std::endl;
-            if(pixel.r == 0){
-                // std::cout << "pixel is activated" << std::endl;
-                continue;
-            }
+    for (int y = radius; y < in.height - radius; ++y) {
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+        for (int x = radius; x < in.width - radius; ++x) {
             uint8_t min_pixel = 255;
-            // std::cout << "pixel is activated" << std::endl;
             for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
 
-                    // std::cout << "pixel kernel" << std::endl;
                     if (kernel[ky][kx] == 1) {
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
-                    
-                        rgb8 kernel_pixel = image.buffer[ny * image.width + nx];
-                        min_pixel = std::min(min_pixel, kernel_pixel.r);                      
+
+                        rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
+                        min_pixel = std::min(min_pixel, kernel_pixel[nx].r);                      
+                        //std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
                         }
                     }
                 }
-             //std::cout << "(y: " << y << ", x: " << x << ")" << std::endl;
-            pixel = copy.buffer[y * copy.width + x];
-            pixel.r = min_pixel;
-            // pixel.g = min_pixel;
-            pixel.b = min_pixel;
-            }
+          pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+          pixel[x].r = min_pixel;
+          }
         }
-        image = copy;  // Appliquer la copie modifiée à l'image d'origine
+    in = copy;  
     }
 
 // Appliquer une opération de dilatation
-void dilate(ImageView<rgb8>& in, const std::vector<std::vector<int>>& kernel, int radius) {
+void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
     int diameter = 2 * radius + 1;
-    ImageView<rgb8> copy = in;
+    Image<rgb8> copy = clone(in);
     for (int y = radius; y < in.height - radius; ++y) {
         for (int x = radius; x < in.width - radius; ++x) {
-            rgb8& pixel = copy.buffer[y * in.width + x];
-            if(pixel.r != 0){
-                continue;
-            }
             uint8_t max_pixel = 0;
             for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
                     if (kernel[ky][kx] == 1){
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
                         rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
                         max_pixel = std::max(max_pixel, kernel_pixel.r);
+                        //std::cout << "val: " << (int)kernel_pixel.r << std::endl;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
                     }
                 }
             }
-            pixel = copy.buffer[y * copy.width + x];
-            pixel.r = max_pixel;
-            //xel.g = max_pixel;
-            pixel.b = 0;
+            rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+            pixel[x].r = max_pixel;
+            //std::cout << "val: " << max_pixel << std::endl;
+            
         }
     }
-    
     in = copy;  // Appliquer la copie modifiée à l'image d'origine
 }
 
 // Ouverture morphologique (érosion suivie de dilatation)
-void morphologicalOpening(ImageView<rgb8>& in, int minradius) {
-    // std::cout << "start morphologie"  << std::endl;
+void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1 % de la resolution de l'image
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk); 
-
+    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
+    // std::cout << "radius: " << radius << std::endl;
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
     erode(in, diskKernel, radius);
-    // std::cout << "dilatation" << std::endl;
     // Étape 2 : Dilatation
     dilate(in, diskKernel, radius);
 }
 
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+  const int lowThreshold = 10; 
+  const int highThreshold = 100;
 
   // Créer une queue pour propager les pixels de bord fort
   std::queue<std::pair<int, int>> edgeQueue;
 
-  // Initialisation : marquer les bords forts et ajouter les pixels forts dans la queue
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
       rgb8 pixel = in.buffer[index];
-      int intensity = (pixel.r + pixel.g + pixel.b) / 3;
+      int intensity = pixel.r;
 
       if (intensity >= highThreshold) {
-        // Marque le pixel comme bord fort (blanc) et l'ajoute dans la queue
         in.buffer[index] = {255, 255, 255};
         edgeQueue.push({x, y});
       } else if (intensity < lowThreshold) {
-        // Marque les pixels en dessous du seuil bas comme arrière-plan (noir)
         in.buffer[index] = {0, 0, 0};
       } else {
-        // Les pixels entre les seuils sont des candidats potentiels (gris)
         in.buffer[index] = {127, 127, 127};
       }
     }
   }
 
-  // Propagation des bords forts vers les pixels adjacents en fonction du seuil bas
   while (!edgeQueue.empty()) {
     auto [x, y] = edgeQueue.front();
     edgeQueue.pop();
 
-    // Parcours des pixels voisins
     for (int dy = -1; dy <= 1; dy++) {
       for (int dx = -1; dx <= 1; dx++) {
         if (dx == 0 && dy == 0) continue;
@@ -156,11 +141,9 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int hi
           int neighborIndex = neighborY * in.width + neighborX;
           rgb8& neighborPixel = in.buffer[neighborIndex];
 
-          int neighborIntensity = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
+          int neighborIntensity = neighborPixel.r;
 
-          // Si le pixel voisin est entre les seuils et qu'il n'est pas déjà marqué comme bord fort
           if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
-            // Marque le pixel comme bord fort et l'ajoute dans la queue pour continuer la propagation
             neighborPixel = {255, 255, 255};
             edgeQueue.push({neighborX, neighborY});
           }
@@ -169,7 +152,6 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int hi
     }
   }
 
-  // Finalise l'image : tous les pixels gris (127, 127, 127) restants deviennent arrière-plan (noir)
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
