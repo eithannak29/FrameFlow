@@ -190,7 +190,7 @@ __device__ void morphological(
         uint8_t new_value = (erode) ? 255 : 0;
         for (int ky = 0; ky < diameter; ++ky) {
             for (int kx = 0; kx < diameter; ++kx) {
-                if (kernel[ky][kx] == 1) {
+                if (kernel[ky * diameter + kx] == 1) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
 
@@ -328,7 +328,7 @@ __global__ void background_estimation_process(
     pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
     
     rgb8* pixel_copy = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
-    pixle_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
+    pixel_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
     
     //apply_filter(in, distance);
 
