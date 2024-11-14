@@ -254,28 +254,22 @@ extern "C" {
   void cpt_process_frame(uint8_t* buffer, int width, int height, int stride)
   {
     auto img = ImageView<rgb8>{(rgb8*)buffer, width, height, stride};
+    auto start = std::chrono::high_resolution_clock::now();
+
     if (g_params.device == e_device_t::CPU)
-    {
-      auto start = std::chrono::high_resolution_clock::now();
       compute_cpp(img);
-      auto end = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double> elapsed = end - start;
-      total_time_elapsed+= elapsed.count();
-      if (frame_counter_bench == FRAMES)
-          std::cout << "Total time CPU: " << total_time_elapsed << "s" << std::endl;
-    }
     else if (g_params.device == e_device_t::GPU)
-    {
-      auto start = std::chrono::high_resolution_clock::now();
       compute_cu(img);
-      auto end = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double> elapsed = end - start;
-      total_time_elapsed+= elapsed.count();
-      std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
-      std::cout << FRAMES << std::endl;
-      if (frame_counter_bench == FRAMES)
-          std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
-    }
+      
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    total_time_elapsed += elapsed.count();
     frame_counter_bench++;
+
+    if (frame_counter_bench == FRAMES) {
+      std::string device_type = (g_params.device == e_device_t::CPU) ? "CPU" : "GPU";
+      std::cout << "Total time " << device_type << ": " << total_time_elapsed << "s" << std::endl;
+    }
+    show_progress(frame_counter_bench, FRAMES);
   }
 }
