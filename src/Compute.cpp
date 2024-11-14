@@ -8,6 +8,7 @@
 #include <thread>
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 
 struct Lab{
@@ -251,9 +252,17 @@ extern "C" {
   {
     auto img = ImageView<rgb8>{(rgb8*)buffer, width, height, stride};
     if (g_params.device == e_device_t::CPU)
+      auto start = std::chrono::high_resolution_clock::now();
       compute_cpp(img);
+      auto end = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = end - start;
+      std::cout << "Elapsed time: " << elapsed.count() << " s\n";
     else if (g_params.device == e_device_t::GPU)
+      auto start = std::chrono::high_resolution_clock::now();
       compute_cu(img);
+      auto end = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = end - start;
+      std::cout << "Elapsed time: " << elapsed.count() << " s\n";
   }
 
 }
