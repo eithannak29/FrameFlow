@@ -190,7 +190,7 @@ __device__ void morphological(
         uint8_t new_value = (erode) ? 255 : 0;
         for (int ky = 0; ky < diameter; ++ky) {
             for (int kx = 0; kx < diameter; ++kx) {
-                if (kernel[ky * diameter + kx] == 1) {
+                if (kernel[ky][kx] == 1) {
                     int ny = y + ky - radius;
                     int nx = x + kx - radius;
 
@@ -325,8 +325,11 @@ __global__ void background_estimation_process(
     
     const double distanceMultiplier = 2.8;
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-
     pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
+    
+    rgb8* pixel_copy = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+    pixle_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
+    
     //apply_filter(in, distance);
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
@@ -413,6 +416,8 @@ void compute_cu(ImageView<rgb8> in)
 
     // Synchronize and check for errors
     cudaDeviceSynchronize();
+
+    //cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     //cudaDeviceSynchronize();

@@ -97,7 +97,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
-    // erode(in, diskKernel, radius);
+    erode(in, diskKernel, radius);
     // Étape 2 : Dilatation
     dilate(in, diskKernel, radius);
 }
