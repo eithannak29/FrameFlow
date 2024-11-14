@@ -231,7 +231,7 @@ void compute_cpp(ImageView<rgb8> in)
   background_estimation_process(in);
   morphologicalOpening(in, 3);
 
-  in = HysteresisThreshold(in);
+  //in = HysteresisThreshold(in);
   //ImageView<rgb8> mask = HysteresisThreshold(in);
 
   //in = applyRedMask(in, mask, initialPixels);
