@@ -375,7 +375,7 @@ void compute_cu(ImageView<rgb8> in)
     // Compute the radius for the kernel
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 1; // 1% of the smallest dimension
-    int minradius = 3;
+    int minradius = 5;
     int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
 
     // Create the disk kernel on the host
