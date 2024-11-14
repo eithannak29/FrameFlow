@@ -6,132 +6,181 @@
 #include <algorithm>
 #include <queue>
 
-// Appliquer une opération d'érosion
-void erode(ImageView<rgb8>& image, int radius) {
-    ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
+std::vector<std::vector<int>> createDiskKernel(int radius) {
     int diameter = 2 * radius + 1;
-
-    for (int y = radius; y < image.height - radius; ++y) {
-        for (int x = radius; x < image.width - radius; ++x) {
-            bool erosion = false;
-            rgb8& pixel = image.buffer[y * image.stride + x];
-            if(pixel.r == 0){
-                continue;
-            }
-            for (int ky = 0; !erosion && ky < diameter; ++ky) {
-                for (int kx = 0; kx < diameter; ++kx) {
-                    int ny = y + ky - radius;
-                    int nx = x + kx - radius;
-                    rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.r == 0) {
-                        erosion = true;                        
-                    }
-                }
-            }
-            if (erosion) {
-                rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.r = 0;
-                pixel.b = pixel.g;
+    std::vector<std::vector<int>> kernel(diameter, std::vector<int>(diameter, 0));
+    int center = radius;
+    
+    for (int i = 0; i < diameter; ++i) {
+        for (int j = 0; j < diameter; ++j) {
+            if (std::sqrt((i - center) * (i - center) + (j - center) * (j - center)) <= radius) {
+                kernel[i][j] = 1;
             }
         }
-        image = copy;  // Appliquer la copie modifiée à l'image d'origine
     }
+    return kernel;
 }
 
-// Appliquer une opération de dilatation
-void dilate(ImageView<rgb8>& image, int radius) {
-    ImageView<rgb8> copy = image;  // Faire une copie temporaire de l'image pour éviter la corruption
-    int diameter = 2 * radius + 1;
+Image<rgb8> clone(ImageView<rgb8> in)
+{
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.width;
+    return img.clone();
+}
 
-    for (int y = radius; y < image.height - radius; ++y) {
-        for (int x = radius; x < image.width - radius; ++x) {
-            bool dilatation = false;
-            rgb8& pixel = image.buffer[y * image.stride + x];
-            if(pixel.b == 0){
-                continue;
-            }
-            for (int ky = 0; !dilatation && ky < diameter; ++ky) {
+// Appliquer une opération d'érosion
+void erode(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
+    Image<rgb8> copy = clone(in);  // Faire une copie temporaire de l'image pour éviter la corruption
+    int diameter = 2 * radius + 1;
+    for (int y = radius; y < in.height - radius; ++y) {
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+        for (int x = radius; x < in.width - radius; ++x) {
+            uint8_t min_pixel = 255;
+            for (int ky = 0; ky < diameter; ++ky) {
                 for (int kx = 0; kx < diameter; ++kx) {
-                    int ny = y + ky - radius;
-                    int nx = x + kx - radius;
-                    rgb8 kernel_pixel = image.buffer[ny * image.stride + nx];
-                    if (kernel_pixel.b == 0) {
-                        dilatation = true;                        
+
+                    if (kernel[ky][kx] == 1) {
+                        int ny = y + ky - radius;
+                        int nx = x + kx - radius;
+
+                        rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
+                        min_pixel = std::min(min_pixel, kernel_pixel[nx].r);                      
+                        //std::cout << "val: " << (int)kernel_pixel[nx].r << std::endl;
+                        }
+                    }
+                }
+          pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+          pixel[x].r = min_pixel;
+          }
+        }
+    in = copy;  
+    }
+
+// Appliquer une opération de dilatation
+void dilate(ImageView<rgb8> in, const std::vector<std::vector<int>>& kernel, int radius) {
+    int diameter = 2 * radius + 1;
+    Image<rgb8> copy = clone(in);
+    for (int y = radius; y < in.height - radius; ++y) {
+        for (int x = radius; x < in.width - radius; ++x) {
+            uint8_t max_pixel = 0;
+            for (int ky = 0; ky < diameter; ++ky) {
+                for (int kx = 0; kx < diameter; ++kx) {
+                    if (kernel[ky][kx] == 1){
+                        int ny = y + ky - radius;
+                        int nx = x + kx - radius;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
+                        rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
+                        max_pixel = std::max(max_pixel, kernel_pixel.r);
+                        //std::cout << "val: " << (int)kernel_pixel.r << std::endl;
+                        //std::cout << "max_pixel: " << max_pixel << std::endl;
                     }
                 }
             }
-            if (dilatation) {
-                rgb8& pixel = copy.buffer[y * copy.stride + x];
-                pixel.r = pixel.g;
-                pixel.b = 0;
-            }
+            rgb8* pixel = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
+            pixel[x].r = max_pixel;
+            //std::cout << "val: " << max_pixel << std::endl;
+            
         }
     }
-    
-    image = copy;  // Appliquer la copie modifiée à l'image d'origine
+    in = copy;  // Appliquer la copie modifiée à l'image d'origine
 }
 
 // Ouverture morphologique (érosion suivie de dilatation)
-void morphologicalOpening(ImageView<rgb8>& image, int radius) {
-    // std::cout << "start morphologie"  << std::endl;
+void morphologicalOpening(ImageView<rgb8> in, int minradius) {
+    int min_dimension = std::min(in.width, in.height);
+    int ratio_disk = 1; // 1 % de la resolution de l'image
+    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
+    // std::cout << "radius: " << radius << std::endl;
+    // Créer un noyau en forme de disque avec le rayon calculé
+    auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
-    erode(image,  radius);
-
+    erode(in, diskKernel, radius);
     // Étape 2 : Dilatation
-    dilate(image, radius);
+    dilate(in, diskKernel, radius);
 }
 
-// Appliquer une hystérésis pour conserver les bords forts et ceux connectés
-void hysteresis(ImageView<rgb8>& image, int lowThreshold, int highThreshold) {
-    int width = image.width;
-    int height = image.height;
-    std::vector<bool> visited(width * height, false); // Pour éviter les doublons
-    std::queue<std::pair<int, int>> edgePixels; // Pixels candidats pour la propagation
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+  const int lowThreshold = 10; 
+  const int highThreshold = 100;
 
-    // Parcourir l'image et appliquer le seuil élevé pour détecter les bords forts
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int index = y * image.stride + x;
-            rgb8& pixel = image.buffer[index];
+  // Créer une queue pour propager les pixels de bord fort
+  std::queue<std::pair<int, int>> edgeQueue;
 
-            // Si le pixel est un bord fort
-            if (pixel.r > highThreshold && !visited[index]) {
-                edgePixels.push({x, y});
-                visited[index] = true;
-            } else if (pixel.r < lowThreshold) {
-                // Pixels en dessous du seuil bas sont supprimés
-                pixel.r = 0;
-                pixel.g = 0;
-                pixel.b = 0;
-            }
-        }
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8 pixel = in.buffer[index];
+      int intensity = pixel.r;
+
+      if (intensity >= highThreshold) {
+        in.buffer[index] = {255, 255, 255};
+        edgeQueue.push({x, y});
+      } else if (intensity < lowThreshold) {
+        in.buffer[index] = {0, 0, 0};
+      } else {
+        in.buffer[index] = {127, 127, 127};
+      }
     }
+  }
 
-    // Propagation des bords faibles connectés aux bords forts
-    std::vector<std::pair<int, int>> directions = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-    while (!edgePixels.empty()) {
-        auto [x, y] = edgePixels.front();
-        edgePixels.pop();
+  while (!edgeQueue.empty()) {
+    auto [x, y] = edgeQueue.front();
+    edgeQueue.pop();
 
-        for (auto [dx, dy] : directions) {
-            int nx = x + dx;
-            int ny = y + dy;
+    for (int dy = -1; dy <= 1; dy++) {
+      for (int dx = -1; dx <= 1; dx++) {
+        if (dx == 0 && dy == 0) continue;
 
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                int nIndex = ny * image.stride + nx;
-                rgb8& neighborPixel = image.buffer[nIndex];
+        int neighborX = x + dx;
+        int neighborY = y + dy;
 
-                // Vérifie si le voisin est un bord faible et non visité
-                if (neighborPixel.r >= lowThreshold && !visited[nIndex]) {
-                    visited[nIndex] = true;
-                    edgePixels.push({nx, ny});
-                } else if (neighborPixel.r < lowThreshold) {
-                    // Supprime les pixels en dessous du seuil bas
-                    neighborPixel.r = 0;
-                    neighborPixel.g = 0;
-                    neighborPixel.b = 0;
-                }
-            }
+        if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+          int neighborIndex = neighborY * in.width + neighborX;
+          rgb8& neighborPixel = in.buffer[neighborIndex];
+
+          int neighborIntensity = neighborPixel.r;
+
+          if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel.r != 255) {
+            neighborPixel = {255, 255, 255};
+            edgeQueue.push({neighborX, neighborY});
+          }
         }
+      }
     }
+  }
+
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+      rgb8& pixel = in.buffer[index];
+
+      if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
+        pixel = {0, 0, 0};
+      }
+    }
+  }
+
+  return in;
+}
+
+ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels) {
+  for (int y = 0; y < in.height; y++) {
+    for (int x = 0; x < in.width; x++) {
+      int index = y * in.width + x;
+
+      if (mask.buffer[index].r > 0) {
+        in.buffer[index].r = std::min(255, static_cast<int>(initialPixels[index].r + 0.5 * 255));
+        in.buffer[index].g = initialPixels[index].g;
+        in.buffer[index].b = initialPixels[index].b;
+      }
+      else {
+        in.buffer[index] = initialPixels[index];
+      }
+    }
+  }
+
+  return in;
 }
