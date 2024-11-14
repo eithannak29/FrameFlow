@@ -126,7 +126,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
                        static_cast<uint8_t>(sumB / count)};
 
     // Calcul de la distance ΔE entre le pixel de fond et la moyenne locale
-    double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
+    double distance = deltaE_cuda(rgbToLab_cuda(mean_pixel), rgbToLab_cuda(bg_pixel[x]));
     bool match = distance < 2;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
