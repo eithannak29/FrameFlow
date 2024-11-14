@@ -16,7 +16,6 @@ struct Lab{
     double a;
     double b;
 };
->>>>>>> dev
 
 /// Your cpp version of the algorithm
 /// This function is called by cpt_process_frame for each frame
