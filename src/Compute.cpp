@@ -33,6 +33,7 @@ ImageView<uint8_t> time_since_match;
 bool initialized = false;
 const int FRAMES = 268; //268 380 580;
 int frame_counter = 0;
+double total_time_elapsed = 0.0; 
 
 void show_progress(int current, int total) {
     int barWidth = 50;
@@ -252,17 +253,23 @@ extern "C" {
   {
     auto img = ImageView<rgb8>{(rgb8*)buffer, width, height, stride};
     if (g_params.device == e_device_t::CPU)
+    {
       auto start = std::chrono::high_resolution_clock::now();
       compute_cpp(img);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
-      std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+    }
     else if (g_params.device == e_device_t::GPU)
+    {
       auto start = std::chrono::high_resolution_clock::now();
       compute_cu(img);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
-      std::cout << "Elapsed time: " << elapsed.count() << " s\n";
-  }
+      
+    total_time_elapsed+= elapsed.count();
+    if (frame_counter == FRAMES)
+        std::cout << "Total time: " << total_time_elapsed << "s" << std::endl;
+    
 
 }
+}}
