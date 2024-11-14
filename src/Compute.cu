@@ -336,7 +336,7 @@ __global__ void background_estimation_process(
     //morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
 
-__global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8>& initialPixels){
+__global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8> initialPixels){
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -352,7 +352,9 @@ __global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8>& initialPi
         pixel[x].b = initial_pixel[x].b;
       }
     else {
-        pixel[x] = initial_pixel[x];
+        pixel[x].r = initial_pixel[x].r;
+        pixel[x].g = initial_pixel[x].g;
+        pixel[x].b = initial_pixel[x].b;
       }
 }
 
