@@ -335,8 +335,8 @@ __global__ void background_estimation_process(
     //morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
 
-__global__ void morphological_process(ImageView<rgb8> in, ImageView<rgb8> copy, const int* diskKernel, int radius, int diameter, bool erode) {
-    morphologicalOpening(in, copy, diskKernel, radius, diameter, erode);
+__global__ void morphological_process(ImageView<rgb8> in, ImageView<rgb8> copy, const int* diskKernel, int radius, int diameter) {
+    morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
 
 void compute_cu(ImageView<rgb8> in)
@@ -421,7 +421,7 @@ void compute_cu(ImageView<rgb8> in)
     // Synchronize and check for errors
     cudaDeviceSynchronize();
 
-    morphological_process<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, true);
+    morphological_process<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter);
     cudaDeviceSynchronize();
     //cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
