@@ -107,50 +107,50 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
     rgb8* candidate_pixel = (rgb8*)((std::byte*)device_candidate.buffer + y * device_candidate.stride);
 
     // Moyenne locale sur les pixels voisins pour une estimation plus stable
-    int sumR = 0, sumG = 0, sumB = 0, count = 0;
-    for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < in.width && ny >= 0 && ny < in.height) {
-                rgb8 neighbor_pixel = *((rgb8*)((std::byte*)in.buffer + ny * in.stride) + nx);
-                sumR += neighbor_pixel.r;
-                sumG += neighbor_pixel.g;
-                sumB += neighbor_pixel.b;
-                count++;
-            }
-        }
-    }
-    rgb8 mean_pixel = {static_cast<uint8_t>(sumR / count),
-                       static_cast<uint8_t>(sumG / count),
-                       static_cast<uint8_t>(sumB / count)};
+    // int sumR = 0, sumG = 0, sumB = 0, count = 0;
+    // for (int dy = -1; dy <= 1; ++dy) {
+    //     for (int dx = -1; dx <= 1; ++dx) {
+    //         int nx = x + dx;
+    //         int ny = y + dy;
+    //         if (nx >= 0 && nx < in.width && ny >= 0 && ny < in.height) {
+    //             rgb8 neighbor_pixel = *((rgb8*)((std::byte*)in.buffer + ny * in.stride) + nx);
+    //             sumR += neighbor_pixel.r;
+    //             sumG += neighbor_pixel.g;
+    //             sumB += neighbor_pixel.b;
+    //             count++;
+    //         }
+    //     }
+    // }
+    // rgb8 mean_pixel = {static_cast<uint8_t>(sumR / count),
+    //                    static_cast<uint8_t>(sumG / count),
+    //                    static_cast<uint8_t>(sumB / count)};
 
     // Calcul de la distance ΔE entre le pixel de fond et la moyenne locale
-    double distance = deltaE_cuda(rgbToLab_cuda(mean_pixel), rgbToLab_cuda(bg_pixel[x]));
+    double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
     bool match = distance < 2;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
 
     if (!match) {
         if (time[x] == 0) {
-            candidate_pixel[x] = mean_pixel;
+            candidate_pixel[x] = pixel[x];//mean_pixel;
             time[x] += 1;
         } else if (time[x] < 100) {
-            candidate_pixel[x].r = (candidate_pixel[x].r + mean_pixel.r) / 2;
-            candidate_pixel[x].g = (candidate_pixel[x].g + mean_pixel.g) / 2;
-            candidate_pixel[x].b = (candidate_pixel[x].b + mean_pixel.b) / 2;
+            candidate_pixel[x].r = (candidate_pixel[x].r + pixel[x].r) / 2;
+            candidate_pixel[x].g = (candidate_pixel[x].g + pixel[x].g) / 2;
+            candidate_pixel[x].b = (candidate_pixel[x].b + pixel[x].b) / 2;
             time[x] += 1;
         } else {
-            mySwapCuda(bg_pixel[x].r, mean_pixel.r);
-            mySwapCuda(bg_pixel[x].g, mean_pixel.g);
-            mySwapCuda(bg_pixel[x].b, mean_pixel.b);
+            mySwapCuda(bg_pixel[x].r, pixel[x].r);
+            mySwapCuda(bg_pixel[x].g, pixel[x].g);
+            mySwapCuda(bg_pixel[x].b, pixel[x].b);
             time[x] = 0;
         }
     } else {
         // Mise à jour progressive du fond avec interpolation pour un lissage
-        bg_pixel[x].r = static_cast<uint8_t>(bg_pixel[x].r * 0.9 + mean_pixel.r * 0.1);
-        bg_pixel[x].g = static_cast<uint8_t>(bg_pixel[x].g * 0.9 + mean_pixel.g * 0.1);
-        bg_pixel[x].b = static_cast<uint8_t>(bg_pixel[x].b * 0.9 + mean_pixel.b * 0.1);
+        bg_pixel[x].r = static_cast<uint8_t>(bg_pixel[x].r * 0.9 + pixel[x].r * 0.1);
+        bg_pixel[x].g = static_cast<uint8_t>(bg_pixel[x].g * 0.9 + pixel[x].g * 0.1);
+        bg_pixel[x].b = static_cast<uint8_t>(bg_pixel[x].b * 0.9 + pixel[x].b * 0.1);
         time[x] = 0;
     }
 
