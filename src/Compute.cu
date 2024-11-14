@@ -127,7 +127,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
 
     // Calcul de la distance ΔE entre le pixel de fond et la moyenne locale
     double distance = deltaE_cuda(rgbToLab_cuda(pixel[x]), rgbToLab_cuda(bg_pixel[x]));
-    bool match = distance < 3;
+    bool match = distance < 5;
 
     uint8_t *time = (uint8_t*)((std::byte*)pixel_time_counter.buffer + y * pixel_time_counter.stride);
 
@@ -323,9 +323,10 @@ __global__ void background_estimation_process(
 
     double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
     
+    const double distanceMultiplier = 2.8;
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
     pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
-    
     //apply_filter(in, distance);
 
     morphologicalOpening(in, copy, diskKernel, radius, diameter);
