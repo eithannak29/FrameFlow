@@ -346,7 +346,7 @@ __global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8>& initialPi
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
     rgb8* initial_pixel = (rgb8*)((std::byte*)initialPixels.buffer + y * initialPixels.stride);
 
-    if (mask.buffer[index].r > 0) {
+    if (pixel[x].r > 0) {
         pixel[x].r = myMinCuda(255, static_cast<int>(initial_pixel[x].r + 0.5 * 255));
         pixel[x].g = initial_pixel[x].g;
         pixel[x].b = initial_pixel[x].b;
