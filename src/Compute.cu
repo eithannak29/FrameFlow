@@ -159,7 +159,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
 
 __device__ void apply_filter(ImageView<rgb8> in, double distance) {
 
-    const double distanceMultiplier = 5;
+    const double distanceMultiplier = 25;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
