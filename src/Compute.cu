@@ -419,7 +419,7 @@ void compute_cu(ImageView<rgb8> in)
 
 
 
-    hysteresis<<<grid, block>>>(device_in, 50, 100);
+    hysteresis<<<grid, block>>>(device_in, 10, 35);
     cudaDeviceSynchronize();
 
     // cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
