@@ -159,7 +159,7 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
 
 __device__ void apply_filter(ImageView<rgb8> in, double distance) {
 
-    const double distanceMultiplier = 25;
+    const double distanceMultiplier = 2.8;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -329,7 +329,7 @@ __global__ void background_estimation_process(
     pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
     //apply_filter(in, distance);
 
-    morphologicalOpening(in, copy, diskKernel, radius, diameter);
+    //morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
 
 void compute_cu(ImageView<rgb8> in)
@@ -424,8 +424,8 @@ void compute_cu(ImageView<rgb8> in)
 
 
 
-    hysteresis<<<grid, block>>>(device_in, 3, 10);
-    cudaDeviceSynchronize();
+    // hysteresis<<<grid, block>>>(device_in, 3, 10);
+    // cudaDeviceSynchronize();
 
     // cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
