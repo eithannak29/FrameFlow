@@ -419,13 +419,13 @@ void compute_cu(ImageView<rgb8> in)
 
 
 
-    hysteresis<<<grid, block>>>(device_in, 50, 100)
+    hysteresis<<<grid, block>>>(device_in, 50, 100);
     cudaDeviceSynchronize();
 
     // cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
-    
+
     // Free device memory for the kernel
     cudaFree(d_diskKernel);
 
