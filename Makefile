@@ -2,6 +2,8 @@
 builddir := ~/build
 outputdir := outputs
 outputfile := $(outputdir)/acet_bg_cuda.mp4
+outputfile_cpu := $(outputdir)/cpu.mp4
+outputfile_gpu := $(outputdir)/gpu.mp4
 mode := gpu #cpu #gpu
 build_type := Debug
 default_video := samples/ACET.mp4
@@ -27,6 +29,13 @@ run: build | $(outputdir)
 	fi; \
 	echo "Running with input video $$input_file..."; \
 	$(builddir)/stream --mode=$(mode) $$input_file --output=$(outputfile)
+
+.PHONY: bench
+bench: build | $(outputdir)
+	@echo "Starting benchmark for CPU mode..."
+	$(builddir)/stream --mode=cpu $(default_video) --output=$(outputfile_cpu)
+	@echo "Starting benchmark for GPU mode..."
+	$(builddir)/stream --mode=gpu $(default_video) --output=$(outputfile_gpu)
 
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
