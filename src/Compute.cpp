@@ -271,10 +271,11 @@ extern "C" {
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = end - start;
       total_time_elapsed+= elapsed.count();
+      std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
+      std::cout << FRAMES << std::endl;
       if (frame_counter_bench == FRAMES)
           std::cout << "Total time GPU: " << total_time_elapsed << "s" << std::endl;
     }
     frame_counter_bench++;
-    std::cout << "Frame " << frame_counter_bench << std::endl;
   }
 }
