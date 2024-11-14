@@ -336,6 +336,26 @@ __global__ void background_estimation_process(
     //morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
 
+__global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8>& initialPixels){
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= in.width || y >= in.height)
+        return;
+
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+    rgb8* initial_pixel = (rgb8*)((std::byte*)initialPixels.buffer + y * initialPixels.stride);
+
+    if (mask.buffer[index].r > 0) {
+        pixel[x].r = myMinCuda(255, static_cast<int>(initial_pixel[x].r + 0.5 * 255));
+        pixel[x].g = initial_pixel[x].g;
+        pixel[x].b = initial_pixel[x].b;
+      }
+    else {
+        pixel[x] = initial_pixel[x];
+      }
+}
+
 void compute_cu(ImageView<rgb8> in)
 {
     static Image<uint8_t> device_logo;
@@ -368,6 +388,11 @@ void compute_cu(ImageView<rgb8> in)
     // Copy the input image to the device
     Image<rgb8> device_in(in.width, in.height, true);
     cudaMemcpy2D(device_in.buffer, device_in.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyHostToDevice);
+
+    //copy Initial Pixel
+    Image<rgb8> Initialcopy(in.width, in.height, true);
+    cudaMemcpy2D(Initialcopy.buffer, Initialcopy.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
+
 
     // Create a copy of the input image for morphological operations
     Image<rgb8> copy(in.width, in.height, true);
@@ -430,18 +455,10 @@ void compute_cu(ImageView<rgb8> in)
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     cudaDeviceSynchronize();
 
-    //hysteresis<<<grid, block>>>(device_in, 5, 25);
-    //cudaDeviceSynchronize();
+    applyRedMask_cuda<<<grid, block>>>(device_in, Initialcopy);
+    cudaDeviceSynchronize();
 
     // Copy the result back to the host
-
-
-
-    // hysteresis<<<grid, block>>>(device_in, 3, 10);
-    // cudaDeviceSynchronize();
-
-    // cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
-
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
 
     // Free device memory for the kernel
