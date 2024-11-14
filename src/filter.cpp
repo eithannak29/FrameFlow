@@ -97,13 +97,13 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     // Créer un noyau en forme de disque avec le rayon calculé
     auto diskKernel = createDiskKernel(radius);
     // Étape 1 : Erosion
-    // erode(in, diskKernel, radius);
+    erode(in, diskKernel, radius);
     // Étape 2 : Dilatation
     dilate(in, diskKernel, radius);
 }
 
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 50; 
+  const int lowThreshold = 10; 
   const int highThreshold = 100;
 
   // Créer une queue pour propager les pixels de bord fort
