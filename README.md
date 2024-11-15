@@ -1,4 +1,4 @@
-# FrameFlow Project README
+# FrameFlow Video Processing
 
 This project is a video processing application that uses CUDA to perform frame-by-frame processing on a video file. The application reads a video file, processes each frame, and writes the processed frames to an output video file.
 
