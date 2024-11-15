@@ -265,7 +265,7 @@ extern "C" {
 
     if (frame_counter_bench == FRAMES) {
       std::string device_type = (g_params.device == e_device_t::CPU) ? "CPU" : "GPU";
-      std::cout << "\n Total time " << device_type << ": " << total_time_elapsed << "s | Average Frame rate" << FRAMES / total_time_elapsed << "fps" << std::endl;
+      std::cout << "\n Total time " << device_type << ": " << total_time_elapsed << "s | Average Frame rate: " << FRAMES / total_time_elapsed << "fps" << std::endl;
     }
     show_progress(frame_counter_bench, FRAMES);
   }
