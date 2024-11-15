@@ -69,7 +69,7 @@ __device__ Lab xyzToLab_cuda(double X, double Y, double Z) {
     double y = Y / Yr;
     double z = Z / Zr;
 
-    // Apply f(t) function
+    // Apply f(t) functionr
     double fx = f_xyz_to_lab_cuda(x);
     double fy = f_xyz_to_lab_cuda(y);
     double fz = f_xyz_to_lab_cuda(z);
@@ -157,21 +157,6 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
     return distance;
 }
 
-__device__ void apply_filter(ImageView<rgb8> in, double distance) {
-
-    const double distanceMultiplier = 2.8;
-
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x >= in.width || y >= in.height)
-        return;
-
-    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-
-    pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
-}
-
 __device__ void morphological(
     ImageView<rgb8> in,
     ImageView<rgb8> copy,
@@ -205,6 +190,8 @@ __device__ void morphological(
             }
         }
         pixel[x].r = new_value;
+        pixel[x].g = new_value;
+        pixel[x].b = new_value;
     }
 }
 
@@ -330,8 +317,12 @@ __global__ void background_estimation_process(
     
     rgb8* pixel_copy = (rgb8*)((std::byte*)copy.buffer + y * copy.stride);
     pixel_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
-    
-    //apply_filter(in, distance);
+
+    if (distance < 15)
+        pixel[x] = {0, 0 ,0};
+    else
+        pixel[x] = {255, 255, 255};
+    // apply_filter(in, distance);
 
     //morphologicalOpening(in, copy, diskKernel, radius, diameter);
 }
@@ -402,9 +393,9 @@ void compute_cu(ImageView<rgb8> in)
 
     // Compute the radius for the kernel
     int min_dimension = std::min(in.width, in.height);
-    int ratio_disk = 1; // 1% of the smallest dimension
-    int minradius = 5;
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
+    int ratio_disk = 2; // 0.5% of the smallest dimension
+    int minradius = 3;
+    int radius = std::max(minradius, (min_dimension / 100) /  ratio_disk);
 
     // Create the disk kernel on the host
     int diameter = 2 * radius + 1;
@@ -445,20 +436,21 @@ void compute_cu(ImageView<rgb8> in)
     // Synchronize and check for errors
     cudaDeviceSynchronize();
 
-    morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, true);
-    cudaDeviceSynchronize();
+     morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, true);
+     cudaDeviceSynchronize();
 
-    morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, false);
+    // cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
+    
+    morphologicalOpening<<<grid, block>>>(copy, device_in, d_diskKernel, radius, diameter, false);
     cudaDeviceSynchronize();
-    //cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
+    // cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
 
-    hysteresis<<<grid, block>>>(device_in, 10, 80);
-    //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
-    cudaDeviceSynchronize();
+    // hysteresis<<<grid, block>>>(device_in, 10, 80);
+    // cudaDeviceSynchronize();
 
-    applyRedMask_cuda<<<grid, block>>>(device_in, Initialcopy);
-    cudaDeviceSynchronize();
+    // applyRedMask_cuda<<<grid, block>>>(device_in, Initialcopy);
+    // cudaDeviceSynchronize();
 
     // Copy the result back to the host
     cudaMemcpy2D(in.buffer, in.stride, device_in.buffer, device_in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToHost);
