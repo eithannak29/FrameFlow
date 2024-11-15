@@ -138,7 +138,7 @@ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bo
   }
 }
 
-ImageView<rgb8> hysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
     hysteresis_threshold_process(in, lowThreshold, highThreshold);
 
     bool updated;
