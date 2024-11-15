@@ -74,7 +74,7 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
                        static_cast<uint8_t>(sumG / count),
                        static_cast<uint8_t>(sumB / count)};
 
-    double distance = deltaE(rgbToLab(pixel[x]), rgbToLab(bg_pixel[x]));
+    double distance = deltaE(rgbToLab(mean_pixel), rgbToLab(bg_pixel[x]));
     bool match = distance < 2;
 
     uint8_t *time = (uint8_t*)((std::byte*)time_since_match.buffer + y * time_since_match.stride);
@@ -106,7 +106,7 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
 
 void background_estimation_process(ImageView<rgb8> in)
 {
-    const double distanceMultiplier = 1.8;
+    const double distanceMultiplier = 2.8;
 
     for (int y = 0; y < in.height; ++y)
     {
@@ -147,10 +147,10 @@ void compute_cpp(ImageView<rgb8> in)
     std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
     background_estimation_process(in);
-    morphologicalOpening(in, 3);
+    //morphologicalOpening(in, 3);
 
-    ImageView<rgb8> mask = HysteresisThreshold(in);
-    in = applyRedMask(in, mask, initialPixels);
+    //ImageView<rgb8> mask = HysteresisThreshold(in);
+    //in = applyRedMask(in, mask, initialPixels);
     }
 
 extern "C" {
