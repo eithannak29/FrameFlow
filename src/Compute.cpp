@@ -26,18 +26,10 @@ void compute_cpp(ImageView<rgb8> in);
 /// This function is called by cpt_process_frame for each frame
 void compute_cu(ImageView<rgb8> in);
 
-<<<<<<< HEAD
 Image<rgb8> bg_value;
 Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
 
-=======
-
-Image<rgb8> bg_value;
-Image<rgb8> candidate_value;
-ImageView<uint8_t> time_since_match;
-
->>>>>>> opening_hysteri
 bool initialized = false;
 const int FRAMES = 268; //268 380 580;
 double total_time_elapsed = 0.0; 
