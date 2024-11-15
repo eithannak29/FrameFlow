@@ -80,13 +80,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     morphological(in, diskKernel, radius, false);
 }
 
-// Apply morphological threshold
-ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 25; 
-  const int highThreshold = 50;
-
-  std::queue<std::pair<int, int>> edgeQueue;
-
+void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
@@ -95,7 +89,6 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
 
       if (intensity >= highThreshold) {
         in.buffer[index] = {255, 255, 255};
-        //edgeQueue.push({x, y});
       } else if (intensity < lowThreshold) {
         in.buffer[index] = {0, 0, 0};
       } else {
@@ -103,16 +96,18 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
       }
     }
   }
+}
 
-  bool hasChanged = true;
-  while (hasChanged) {
-    hasChanged = false;
-    for (int y = 0; y < in.height; y++) {
+void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
+  for (int y = 0; y < in.height; y++) {
       for (int x = 0; x < in.width; x++) {
-        int index = y * in.width + x;
-        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-        if (pixel[x].r == 255) {
+      if (x >= in.width || y >= in.height)
+          return;
+
+      rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+      if (pixel[x].r == 255) {
           int nb_neighbors = 0;
           for (int dy = -1; dy <= 1; dy++) {
               for (int dx = -1; dx <= 1; dx++) {
@@ -126,7 +121,7 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
                       int neighborIntensity = neighborPixel[neighborX].r;
                       if (neighborIntensity > lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r == 127) {
                           neighborPixel[neighborX] = {255, 255, 255};
-                          hasChanged = true;
+                          *hasChanged = true;
                       }
                       if (neighborIntensity >= lowThreshold) {
                           nb_neighbors++;
@@ -136,27 +131,114 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
           }
           if (nb_neighbors < 4) {
               pixel[x] = {0, 0, 0};
-              hasChanged = true;
+              *hasChanged = true;
           }
-        }
       }
     }
   }
-
-
-  for (int y = 0; y < in.height; y++) {
-    for (int x = 0; x < in.width; x++) {
-      int index = y * in.width + x;
-      rgb8& pixel = in.buffer[index];
-
-      if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
-        pixel = {0, 0, 0};
-      }
-    }
-  }
-
-  return in;
 }
+
+ImageView<rgb8> hysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+    hysteresis_threshold_process(in, lowThreshold, highThreshold);
+
+    bool updated;
+    do {
+        updated = false;
+        propagate_edges(in, lowThreshold, highThreshold, &updated);
+    } while (updated);
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= in.width || y >= in.height)
+        return;
+
+    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+    if (pixel[x].r == 127) {
+        pixel[x].r = 0;
+        pixel[x].g = 0;
+        pixel[x].b = 0;
+    }
+    return in;
+}
+
+// // Apply morphological threshold
+// ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
+//   const int lowThreshold = 25; 
+//   const int highThreshold = 50;
+
+//   std::queue<std::pair<int, int>> edgeQueue;
+
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       rgb8 pixel = in.buffer[index];
+//       int intensity = pixel.r;
+
+//       if (intensity >= highThreshold) {
+//         in.buffer[index] = {255, 255, 255};
+//       } else if (intensity < lowThreshold) {
+//         in.buffer[index] = {0, 0, 0};
+//       } else {
+//         in.buffer[index] = {127, 127, 127};
+//       }
+//     }
+//   }
+
+//   bool hasChanged = true;
+//   while (hasChanged) {
+//     hasChanged = false;
+//     for (int y = 0; y < in.height; y++) {
+//       for (int x = 0; x < in.width; x++) {
+//         int index = y * in.width + x;
+//         rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+
+//         if (pixel[x].r == 255) {
+//           int nb_neighbors = 0;
+//           for (int dy = -1; dy <= 1; dy++) {
+//               for (int dx = -1; dx <= 1; dx++) {
+//                   if (dx == 0 && dy == 0) continue;
+
+//                   int neighborX = x + dx;
+//                   int neighborY = y + dy;
+
+//                   if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+//                       rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
+//                       int neighborIntensity = neighborPixel[neighborX].r;
+//                       if (neighborIntensity > lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r == 127) {
+//                           neighborPixel[neighborX] = {255, 255, 255};
+//                           hasChanged = true;
+//                       }
+//                       if (neighborIntensity >= lowThreshold) {
+//                           nb_neighbors++;
+//                       }
+//                   }
+//               }
+//           }
+//           if (nb_neighbors < 4) {
+//               pixel[x] = {0, 0, 0};
+//               hasChanged = true;
+//           }
+//         }
+//       }
+//     }
+//   }
+
+
+//   for (int y = 0; y < in.height; y++) {
+//     for (int x = 0; x < in.width; x++) {
+//       int index = y * in.width + x;
+//       rgb8& pixel = in.buffer[index];
+
+//       if (pixel.r == 127 && pixel.g == 127 && pixel.b == 127) {
+//         pixel = {0, 0, 0};
+//       }
+//     }
+//   }
+
+//   return in;
+// }
 
 // Apply red mask
 ImageView<rgb8> applyRedMask(ImageView<rgb8> in, const ImageView<rgb8>& mask, std::vector<rgb8> initialPixels) {
