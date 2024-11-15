@@ -233,13 +233,10 @@ gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
       // Essayer de récupérer la durée totale du flux
       if (gst_element_query_duration(GST_ELEMENT(filter), GST_FORMAT_TIME, &duration)) {
           total_frames = (gint64)((duration / GST_SECOND) * fps_n / fps_d) + 20;
-          g_print("Total frames estimated: %" G_GINT64_FORMAT "\n", total_frames);
       } else {
-          g_print("Unable to query duration. Defaulting total_frames to 0.\n");
           total_frames = 0; // Valeur par défaut si la durée est inconnue
       }
   } else {
-      g_print("Invalid framerate. Defaulting total_frames to 0.\n");
       total_frames = 0;
   }
 
@@ -268,8 +265,8 @@ gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
 
   int bar_width = 50;
   float progress = (float)current_frame / total_frames * 100;
-  if (progress > 1.0f) {
-      progress = 1.0f;
+  if (progress > 100.0f) {
+      progress = 100.0f;
   }
   int filled = bar_width * progress / 100;
   current_frame++;
