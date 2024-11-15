@@ -37,6 +37,7 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <gst/video/gstvideofilter.h>
+#include <stdio.h>
 #include "gstfilter.h"
 #include "Compute.hpp"
 
@@ -230,6 +231,37 @@ gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
 
 static int current_frame = 0;
 static gint64 total_frames = 0;
+
+static gboolean
+gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
+    GstVideoInfo * in_info, GstCaps * outcaps, GstVideoInfo * out_info)
+{
+  GstMyFilter *cudafilter = GST_MYFILTER (filter);
+
+  GST_DEBUG_OBJECT (cudafilter, "set_info");
+
+  // Récupérer les informations sur le framerate
+  guint fps_n = GST_VIDEO_INFO_FPS_N(in_info);
+  guint fps_d = GST_VIDEO_INFO_FPS_D(in_info);
+
+  if (fps_n != 0 && fps_d != 0) {
+      GstClockTime duration;
+
+      // Essayer de récupérer la durée totale du flux
+      if (gst_element_query_duration(GST_ELEMENT(filter), GST_FORMAT_TIME, &duration)) {
+          total_frames = (gint64)((duration / GST_SECOND) * fps_n / fps_d);
+          g_print("Total frames estimated: %" G_GINT64_FORMAT "\n", total_frames);
+      } else {
+          g_print("Unable to query duration. Defaulting total_frames to 0.\n");
+          total_frames = 0; // Valeur par défaut si la durée est inconnue
+      }
+  } else {
+      g_print("Invalid framerate. Defaulting total_frames to 0.\n");
+      total_frames = 0;
+  }
+
+  return TRUE;
+}
 
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
