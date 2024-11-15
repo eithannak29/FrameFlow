@@ -203,34 +203,16 @@ gst_myfilter_stop (GstBaseTransform * trans)
   return TRUE;
 }
 
-static gboolean
-gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
-    GstVideoInfo * in_info, GstCaps * outcaps, GstVideoInfo * out_info)
-{
-  GstMyFilter *cudafilter = GST_MYFILTER (filter);
+// static gboolean
+// gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
+//     GstVideoInfo * in_info, GstCaps * outcaps, GstVideoInfo * out_info)
+// {
+//   GstMyFilter *cudafilter = GST_MYFILTER (filter);
 
-  GST_DEBUG_OBJECT (cudafilter, "set_info");
+//   GST_DEBUG_OBJECT (cudafilter, "set_info");
 
-  return TRUE;
-}
-
-/* transform */
-/* Uncomment if you want a transform not inplace
-
-static GstFlowReturn
-gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
-    GstVideoFrame * outframe)
-{
-  GstCudaFilter *cudafilter = GST_MYFILTER (filter);
-
-  GST_DEBUG_OBJECT (cudafilter, "transform_frame");
-
-  return GST_FLOW_OK;
-}
-*/
-
-static int current_frame = 0;
-static gint64 total_frames = 0;
+//   return TRUE;
+// }
 
 static gboolean
 gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
@@ -262,6 +244,24 @@ gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
 
   return TRUE;
 }
+
+/* transform */
+/* Uncomment if you want a transform not inplace
+
+static GstFlowReturn
+gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
+    GstVideoFrame * outframe)
+{
+  GstCudaFilter *cudafilter = GST_MYFILTER (filter);
+
+  GST_DEBUG_OBJECT (cudafilter, "transform_frame");
+
+  return GST_FLOW_OK;
+}
+*/
+
+static int current_frame = 0;
+static gint64 total_frames = 0;
 
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
