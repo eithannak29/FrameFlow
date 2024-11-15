@@ -130,28 +130,33 @@ std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
 
 void compute_cpp(ImageView<rgb8> in)
 {
-  Image<rgb8> img = Image<rgb8>();
-  img.buffer = in.buffer;
-  img.width = in.width;
-  img.height = in.height;
-  img.stride = in.stride;
-  if (!initialized)
-  {
-      initialized = true;
-      bg_value = img.clone();
-      candidate_value = img.clone();
-      uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
-      time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
-  }
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.stride;
+    if (!initialized)
+    {
+        initialized = true;
+        bg_value = img.clone();
+        candidate_value = img.clone();
+        uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
+        time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
+    }
 
-   std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
+    std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
-  background_estimation_process(in);
-  morphologicalOpening(in, 3);
+    std::cout << "Processing frame" << std::endl;
+    background_estimation_process(in);
+    std::cout << "Pmorphological" << std::endl;
+    morphologicalOpening(in, 3);
 
-  ImageView<rgb8> mask = HysteresisThreshold(in);
-  in = applyRedMask(in, mask, initialPixels);
-}
+    std::cout << "Hysteresis" << std::endl;
+    ImageView<rgb8> mask = HysteresisThreshold(in);
+    std::cout << "Apply mask" << std::endl;
+    in = applyRedMask(in, mask, initialPixels);
+    std::cout << "End" << std::endl;
+    }
 
 extern "C" {
 
