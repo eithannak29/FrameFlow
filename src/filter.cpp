@@ -95,7 +95,7 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
 
       if (intensity >= highThreshold) {
         in.buffer[index] = {255, 255, 255};
-        edgeQueue.push({x, y});
+        //edgeQueue.push({x, y});
       } else if (intensity < lowThreshold) {
         in.buffer[index] = {0, 0, 0};
       } else {
@@ -104,40 +104,45 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
     }
   }
 
-  while (!edgeQueue.empty()) {
-    auto [x, y] = edgeQueue.front();
-    int index = y * in.width + x;
-    rgb8 pixel = in.buffer[index];
-    edgeQueue.pop();
+  bool hasChanged = true;
+  while (hasChanged) {
+    hasChanged = false;
+    for (int y = 0; y < in.height; y++) {
+      for (int x = 0; x < in.width; x++) {
+        int index = y * in.width + x;
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    int nb_neighbors = 0;
-    for (int dy = -1; dy <= 1; dy++) {
-      for (int dx = -1; dx <= 1; dx++) {
-        if (dx == 0 && dy == 0) continue;
+        if (pixel[x].r == 255) {
+          int nb_neighbors = 0;
+          for (int dy = -1; dy <= 1; dy++) {
+              for (int dx = -1; dx <= 1; dx++) {
+                  if (dx == 0 && dy == 0) continue;
 
-        int neighborX = x + dx;
-        int neighborY = y + dy;
+                  int neighborX = x + dx;
+                  int neighborY = y + dy;
 
-        if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
-          int neighborIndex = neighborY * in.width + neighborX;
-          rgb8& neighborPixel = in.buffer[neighborIndex];
-
-          int neighborIntensity = neighborPixel.r;
-
-          if (neighborIntensity > lowThreshold && neighborIntensity < highThreshold && neighborPixel.r == 127) {
-            neighborPixel = {255, 255, 255};
-            edgeQueue.push({neighborX, neighborY});
+                  if (neighborX >= 0 && neighborX < in.width && neighborY >= 0 && neighborY < in.height) {
+                      rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
+                      int neighborIntensity = neighborPixel[neighborX].r;
+                      if (neighborIntensity > lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r == 127) {
+                          neighborPixel[neighborX] = {255, 255, 255};
+                          hasChanged = true;
+                      }
+                      if (neighborIntensity >= lowThreshold) {
+                          nb_neighbors++;
+                      }
+                  }
+              }
           }
-          if (neighborIntensity >= lowThreshold) {
-            nb_neighbors++;
+          if (nb_neighbors < 4) {
+              pixel[x] = {0, 0, 0};
+              hasChanged = true;
           }
         }
       }
     }
-    if (nb_neighbors < 4) {
-      pixel = {0, 0, 0};
-    }
   }
+
 
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
