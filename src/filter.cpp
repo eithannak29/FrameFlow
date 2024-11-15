@@ -101,6 +101,8 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
 
   while (!edgeQueue.empty()) {
     auto [x, y] = edgeQueue.front();
+    int index = y * in.width + x;
+    rgb8 pixel = in.buffer[index];
     edgeQueue.pop();
 
     int nb_neighbors = 0;
