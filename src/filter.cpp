@@ -6,9 +6,7 @@
 #include <algorithm>
 #include <queue>
 
-std::vector<std::vector<int>> createDiskKernel(int min_dimension) {
-    int ratio_disk = 2;
-    int radius = (min_dimension / 100) / ratio_disk;
+std::vector<std::vector<int>> createDiskKernel(int radius) {
     int center = radius;
     int diameter = 2 * radius + 1;
 
@@ -72,7 +70,9 @@ void morphological(ImageView<rgb8> in, const std::vector<std::vector<int>>& kern
 // Apply morphological opening (erode + dilate)
 void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     int min_dimension = std::min(in.width, in.height);
-    auto diskKernel = createDiskKernel(min_dimension);
+      int ratio_disk = 2;
+    int radius = (min_dimension / 100) / ratio_disk;
+    auto diskKernel = createDiskKernel(radius);
     
     // Erosion
     morphological(in, diskKernel, radius, true);
