@@ -261,7 +261,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
 
     if (pixel[x].r == 255) {
         // Vérifier si un voisin est un bord fort
-        for (int dy = -1; dy <= 1 && !*hasChanged; dy++) {
+        for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 if (dx == 0 && dy == 0) continue;
 
