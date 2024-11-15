@@ -423,6 +423,12 @@ void compute_cu(ImageView<rgb8> in)
         }
     }
 
+    std::cout << "kernel_size: " << kernel_size << std::endl;
+    for (int i = 0; i < kernel_size; i++) {
+        std::cout << h_diskKernel[i] << "(" << i << ") ";
+    }
+    std::cout << std::endl;
+
     // Allocate device memory for the kernel
     int* d_diskKernel;
     cudaMalloc(&d_diskKernel, kernel_size * sizeof(int));
