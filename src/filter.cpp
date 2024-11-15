@@ -152,8 +152,6 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int hi
 
     for (int y = 0; y < in.height; y++) {
       for (int x = 0; x < in.width; x++) {
-        if (x >= in.width || y >= in.height)
-            return;
 
         rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
