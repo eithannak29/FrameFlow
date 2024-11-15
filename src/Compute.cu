@@ -417,7 +417,7 @@ void compute_cu(ImageView<rgb8> in)
     morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, true);
     cudaDeviceSynchronize();
 
-    morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, false);
+    morphologicalOpening<<<grid, block>>>(copy, device_in, d_diskKernel, radius, diameter, false);
     cudaDeviceSynchronize();
 
     //---Hysteresis thresholding---

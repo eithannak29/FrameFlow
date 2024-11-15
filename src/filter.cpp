@@ -52,11 +52,11 @@ void morphological(ImageView<rgb8> in, const std::vector<std::vector<int>>& kern
                         int ny = y + ky - radius;
                         int nx = x + kx - radius;
 
-                        rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
+                        rgb8 kernel_pixel = in.buffer[ny * in.width + nx];
                         if (erode) {
-                            new_value = std::min(new_value, kernel_pixel[nx].r);
+                            new_value = std::min(new_value, kernel_pixel.r);
                         } else {
-                            new_value = std::max(new_value, kernel_pixel[nx].r);
+                            new_value = std::max(new_value, kernel_pixel.r);
                         }                     
                     }
                 }
