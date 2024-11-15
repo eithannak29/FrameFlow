@@ -26,10 +26,18 @@ void compute_cpp(ImageView<rgb8> in);
 /// This function is called by cpt_process_frame for each frame
 void compute_cu(ImageView<rgb8> in);
 
+<<<<<<< HEAD
 Image<rgb8> bg_value;
 Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
 
+=======
+
+Image<rgb8> bg_value;
+Image<rgb8> candidate_value;
+ImageView<uint8_t> time_since_match;
+
+>>>>>>> opening_hysteri
 bool initialized = false;
 const int FRAMES = 268; //268 380 580;
 double total_time_elapsed = 0.0; 
@@ -236,6 +244,18 @@ void compute_cpp(ImageView<rgb8> in)
   in = applyRedMask(in, mask, initialPixels);
 }
 
+
+   std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
+
+  // Image<rgb8> copy = img.clone();
+  background_estimation_process(in);
+  morphologicalOpening(in, 3);
+
+  //in = HysteresisThreshold(in);
+  ImageView<rgb8> mask = HysteresisThreshold(in);
+
+  in = applyRedMask(in, mask, initialPixels);
+}
 
 extern "C" {
 
