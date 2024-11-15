@@ -147,20 +147,24 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int hi
         propagate_edges(in, lowThreshold, highThreshold, &updated);
     } while (updated);
 
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    // int x = blockIdx.x * blockDim.x + threadIdx.x;
+    // int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= in.width || y >= in.height)
-        return;
+    for (int y = 0; y < in.height; y++) {
+      for (int x = 0; x < in.width; x++) {
+        if (x >= in.width || y >= in.height)
+            return;
 
-    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
+        rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
-    if (pixel[x].r == 127) {
-        pixel[x].r = 0;
-        pixel[x].g = 0;
-        pixel[x].b = 0;
+        if (pixel[x].r == 127) {
+            pixel[x].r = 0;
+            pixel[x].g = 0;
+            pixel[x].b = 0;
+        }
+      }
     }
-    return in;
+  return in;
 }
 
 // // Apply morphological threshold
