@@ -10,6 +10,7 @@ std::vector<std::vector<int>> createDiskKernel(int radius) {
     int diameter = 2 * radius + 1;
     std::vector<std::vector<int>> kernel(diameter, std::vector<int>(diameter, 0));
     int center = radius;
+    std::cout << "radius : " << radius << std::endl;
     
     for (int i = 0; i < diameter; ++i) {
         for (int j = 0; j < diameter; ++j) {
