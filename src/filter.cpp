@@ -60,6 +60,7 @@ void morphological(ImageView<rgb8> in, const std::vector<std::vector<int>>& kern
         }
     in = copy;  
     }
+}
 
 // Apply morphological opening (erode + dilate)
 void morphologicalOpening(ImageView<rgb8> in, int minradius) {
