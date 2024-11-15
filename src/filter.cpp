@@ -130,7 +130,7 @@ ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
       }
     }
     if (nb_neighbors < 4) {
-      pixel[x] = {0, 0, 0};
+      pixel = {0, 0, 0};
       edgeQueue.push({x, y});
     }
   }
