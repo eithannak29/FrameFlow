@@ -214,6 +214,7 @@ gst_myfilter_stop (GstBaseTransform * trans)
 //   return TRUE;
 // }
 
+static gint64 total_frames = 0;
 static gboolean
 gst_myfilter_set_info (GstVideoFilter * filter, GstCaps * incaps,
     GstVideoInfo * in_info, GstCaps * outcaps, GstVideoInfo * out_info)
@@ -261,8 +262,6 @@ gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
 */
 
 static int current_frame = 0;
-static gint64 total_frames = 0;
-
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
 {
