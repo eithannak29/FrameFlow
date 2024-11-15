@@ -1,5 +1,5 @@
 # Paths and configurations
-builddir := ~/build
+builddir := build
 outputdir := outputs
 outputfile := $(outputdir)/acet_bg_cuda.mp4
 outputfile_cpu := $(outputdir)/cpu.mp4

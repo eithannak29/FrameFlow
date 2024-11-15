@@ -124,11 +124,9 @@ double deltaE(const Lab& lab1, const Lab& lab2) {
 
 double background_estimation(ImageView<rgb8> in, int x, int y)
 {
-<<<<<<< HEAD
     //rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-=======
-    rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
->>>>>>> dev
+
+
     rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
     rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
 
@@ -185,11 +183,8 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
 
 void background_estimation_process(ImageView<rgb8> in)
 {
-<<<<<<< HEAD
  //   const double treshold = 25;
-=======
-    const double treshold = 25;
->>>>>>> dev
+
     const double distanceMultiplier = 2.8;
 
     for (int y = 0; y < in.height; ++y)
@@ -232,22 +227,6 @@ void compute_cpp(ImageView<rgb8> in)
       uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
       time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
   }
-<<<<<<< HEAD
-=======
-
-   std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
-
-  // Image<rgb8> copy = img.clone();
-  background_estimation_process(in);
-  morphologicalOpening(in, 3);
-
-  //in = HysteresisThreshold(in);
-  ImageView<rgb8> mask = HysteresisThreshold(in);
-
-  in = applyRedMask(in, mask, initialPixels);
-}
->>>>>>> dev
-
 
    std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
