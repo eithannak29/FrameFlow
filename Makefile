@@ -1,5 +1,5 @@
 # Paths and configurations
-builddir := ~/build
+builddir := build
 outputdir := outputs
 outputfile := $(outputdir)/acet_bg_cuda.mp4
 outputfile_cpu := $(outputdir)/cpu.mp4
@@ -49,7 +49,7 @@ profiler: build | $(outputdir)
 	    input_file=$(default_video); \
 	fi; \
 	echo "Profiling with input video $$input_file..."; \
-	nvprof ${builddir}/stream --mode=gpu $$input_file --outputs=$(outputfile_gpu)
+	nvprof ${builddir}/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
 
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
