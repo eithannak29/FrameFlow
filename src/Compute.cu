@@ -196,10 +196,10 @@ __device__ void morphological(
 
                     rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
                     if (erode) {
-                        new_value = myMinCuda(new_value, kernel_pixel[nx].r);
+                        new_value = myMinCuda(new_value, kernel_pixel[nx].r * 0.8);
                     }
                     else {
-                        new_value = myMaxCuda(new_value, kernel_pixel[nx].r);
+                        new_value = myMaxCuda(new_value, kernel_pixel[nx].r * 0.8);
                     }
                 }
             }
