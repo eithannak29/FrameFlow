@@ -268,6 +268,9 @@ gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
 
   int bar_width = 50;
   float progress = (float)current_frame / total_frames * 100;
+  if (progress > 1.0f) {
+      progress = 1.0f;
+  }
   int filled = bar_width * progress / 100;
   current_frame++;
 
