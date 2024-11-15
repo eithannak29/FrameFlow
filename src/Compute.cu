@@ -4,11 +4,8 @@
 #include <iostream>
 #include <cmath> // For sqrtf and std::pow
 
-<<<<<<< HEAD
-=======
 //--------Template Functions--------
 
->>>>>>> opening_hysteri
 struct Lab
 {
     double L, a, b;
@@ -314,7 +311,6 @@ __global__ void background_estimation_process(
     pixel_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
 }
 
-// 
 __global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8> initialPixels){
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
