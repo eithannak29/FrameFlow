@@ -1,4 +1,4 @@
-# FrameFlow Project README
+# FrameFlow
 
 ## Prerequisites
 
