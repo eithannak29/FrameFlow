@@ -51,15 +51,6 @@ profiler: build | $(outputdir)
 	echo "Profiling with input video $$input_file..."; \
 	nvprof ${builddir}/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
 
-.PHONY: profiler_cpp
-profiler_cpp: build | $(outputdir)
-	@input_file=$(default_video); \
-	echo "Profiling the project with gprof using input video $$input_file..."; \
-	g++ -pg -o $(builddir)/program main.cpp -O2 && \
-	$(builddir)/program $$input_file && \
-	gprof $(builddir)/program gmon.out > $(outputfile) && \
-	echo "Profiling complete. Report saved to $(outputfile).
-
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
 	@mkdir -p $(outputdir)
