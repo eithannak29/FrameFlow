@@ -11,13 +11,6 @@
 #include <vector>
 #include <chrono>
 
-
-struct Lab{
-    double L;
-    double a;
-    double b;
-};
-
 /// Your cpp version of the algorithm
 /// This function is called by cpt_process_frame for each frame
 void compute_cpp(ImageView<rgb8> in);
