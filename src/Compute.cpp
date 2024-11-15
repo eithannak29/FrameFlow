@@ -2,6 +2,7 @@
 #include "filter.hpp"
 #include "Image.hpp"
 #include "logo.h"
+
 #include "utils.hpp"
 
 #include <chrono>

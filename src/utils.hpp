@@ -17,4 +17,4 @@ Lab xyzToLab(double X, double Y, double Z);
 Lab rgbToLab(const rgb8& rgb);
 double deltaE(const Lab& lab1, const Lab& lab2);
 
-#endif // COMPUTE_UTILS_UTILS_HPP
+#endif // UTILS_HPP

@@ -16,7 +16,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall")
 
 
 add_library(stb_image src/stb_image.h src/stb_image.c)
-add_library(Compute src/Compute.cpp src/Compute.cu src/logo.c src/filter.cpp)
+add_library(Compute src/Compute.cpp src/Compute.cu src/logo.c src/filter.cpp src/utils.cpp)
 
 target_link_libraries(Compute PRIVATE CUDA::cudart)
 
