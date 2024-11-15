@@ -41,6 +41,16 @@ bench: build | $(outputdir)
 	echo "Starting benchmark for GPU mode..."; \
 	$(builddir)/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
 
+# Target to profile the project using nvprof
+.PHONY: profiler
+profiler: build | $(outputdir)
+	@input_file=$(input_video); \
+	if [ -z "$$input_file" ]; then \
+	    input_file=$(default_video); \
+	fi; \
+	echo "Profiling with input video $$input_file..."; \
+	nvprof --output-profile $(outputdir)/nvprof_report.nvvp $(builddir)/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
+
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
 	@mkdir -p $(outputdir)
