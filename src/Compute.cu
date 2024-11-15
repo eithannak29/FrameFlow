@@ -324,7 +324,7 @@ __global__ void background_estimation_process(
 
     double distance = background_estimation(in, device_background, device_candidate, pixel_time_counter);
     
-    const double distanceMultiplier = 2.8;
+    const double distanceMultiplier = 1.8;
     rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
     pixel[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
     
