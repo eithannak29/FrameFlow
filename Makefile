@@ -1,6 +1,10 @@
 # Paths and configurations
 builddir := ~/build
 outputdir := outputs
+outputfile := $(outputdir)/acet_bg_cuda.mp4
+outputfile_cpu := $(outputdir)/cpu.mp4
+outputfile_gpu := $(outputdir)/gpu.mp4
+mode := gpu #cpu #gpu
 build_type := Debug
 default_video := samples/ACET.mp4
 
@@ -19,23 +23,23 @@ build: configure
 # Target to run the project
 .PHONY: run
 run: build | $(outputdir)
-	@input_file=$(or $(input_video), $(default_video)); \
-	output_file=$(outputdir)/$(or $(output_video), output.mp4); \
-	mode=$(or $(mode), gpu); \
-	echo "Running with input video $$input_file in mode $$mode..."; \
-	$(builddir)/stream --mode=$$mode $$input_file --output=$$output_file
+	@input_file=$(input_video); \
+	if [ -z "$$input_file" ]; then \
+	    input_file=$(default_video); \
+	fi; \
+	echo "Running with input video $$input_file..."; \
+	$(builddir)/stream --mode=$(mode) $$input_file --output=$(outputfile)
 
-# Target to run benchmark for CPU and GPU
 .PHONY: bench
 bench: build | $(outputdir)
-	@input_file=$(or $(input_video), $(default_video)); \
-	base_output_file=$(or $(output_video), output); \
-	output_file_cpu=$(outputdir)/$$base_output_file"_cpu.mp4"; \
-	output_file_gpu=$(outputdir)/$$base_output_file"_gpu.mp4"; \
+	@input_file=$(input_video); \
+	if [ -z "$$input_file" ]; then \
+	    input_file=$(default_video); \
+	fi; \
 	echo "Starting benchmark for CPU mode..."; \
-	$(builddir)/stream --mode=cpu $$input_file --output=$$output_file_cpu; \
+	$(builddir)/stream --mode=cpu $$input_file --output=$(outputfile_cpu); \
 	echo "Starting benchmark for GPU mode..."; \
-	$(builddir)/stream --mode=gpu $$input_file --output=$$output_file_gpu
+	$(builddir)/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
 
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
@@ -45,4 +49,4 @@ $(outputdir):
 .PHONY: clean
 clean:
 	@echo "Cleaning build files..."
-	rm -rf $(builddir)/* $(outputdir)/*
+	rm -rf $(builddir)/* $(outputdir)/output.mp4
