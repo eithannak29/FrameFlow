@@ -272,6 +272,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
                     rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
                     int neighborIntensity = neighborPixel[neighborX].r;
                     if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r != 255) {
+                        printf("Propagating edge at (%d, %d) to (%d, %d)\n", x, y, neighborX, neighborY);
                         neighborPixel[neighborX] = {0, 0, 0};
                         *hasChanged = true;
                     }
@@ -459,7 +460,7 @@ void compute_cu(ImageView<rgb8> in)
     //cudaMemcpy2D(device_in.buffer, device_in.stride, copy.buffer, copy.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
 
-    hysteresis<<<grid, block>>>(device_in, 10, 80);
+    hysteresis<<<grid, block>>>(device_in, 10, 65);
     //propagate_edges_process<<<grid, block>>>(device_in, 20, 50);
     cudaDeviceSynchronize();
 
