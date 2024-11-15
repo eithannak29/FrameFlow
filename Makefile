@@ -49,7 +49,7 @@ profiler: build | $(outputdir)
 	    input_file=$(default_video); \
 	fi; \
 	echo "Profiling with input video $$input_file..."; \
-	nvprof --output-profile $(outputdir)/nvprof_report.nvvp $(builddir)/stream --mode=gpu $$input_file --output=$(outputfile_gpu)
+	nvprof ${builddir}/stream --mode=gpu $$input_file --outputs=$(outputfile_gpu)
 
 # Create the outputs directory if it doesn’t exist
 $(outputdir):
