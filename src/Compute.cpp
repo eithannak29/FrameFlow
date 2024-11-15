@@ -35,22 +35,6 @@ bool initialized = false;
 const int FRAMES = 268; //268 380 580;
 double total_time_elapsed = 0.0; 
 
-void show_progress(int current, int total) {
-    int barWidth = 50;
-    float progress = (float)current / total;
-
-    std::cout << "[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-    std::cout << "] " << int(progress * 100.0) << " %\r";
-    std::cout.flush();
-}
-
-
 double sRGBToLinear(double c) {
     if (c <= 0.04045)
         return c / 12.92;
@@ -270,6 +254,5 @@ extern "C" {
       std::string device_type = (g_params.device == e_device_t::CPU) ? "CPU" : "GPU";
       std::cout << "Total time " << device_type << ": " << total_time_elapsed << "s" << std::endl;
     }
-    show_progress(frame_counter_bench, FRAMES);
   }
 }

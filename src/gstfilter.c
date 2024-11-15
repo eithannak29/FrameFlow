@@ -228,9 +228,28 @@ gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
 }
 */
 
+static int current_frame = 0;
+static gint64 total_frames = 0;
+
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
 {
+
+  int bar_width = 70;
+  float progress = (float)current_frame / total_frames * 100;
+  int filled = bar_width * progress / 100;
+  current_frame++;
+
+  printf("\r"); 
+  printf("["); 
+  for (int i = 0; i < bar_width; i++) {
+      if (i < filled)
+          printf("="); 
+      else
+          printf(" ");
+  }
+  printf("] %.2f%%   ", progress);
+
   GstMyFilter *cudafilter = GST_MYFILTER (filter);
 
   GST_DEBUG_OBJECT (cudafilter, "transform_frame_ip");
