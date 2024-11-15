@@ -146,16 +146,11 @@ void compute_cpp(ImageView<rgb8> in)
 
     std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
 
-    std::cout << "Processing frame" << std::endl;
     background_estimation_process(in);
-    std::cout << "Pmorphological" << std::endl;
     morphologicalOpening(in, 3);
 
-    std::cout << "Hysteresis" << std::endl;
     ImageView<rgb8> mask = HysteresisThreshold(in);
-    std::cout << "Apply mask" << std::endl;
     in = applyRedMask(in, mask, initialPixels);
-    std::cout << "End" << std::endl;
     }
 
 extern "C" {
