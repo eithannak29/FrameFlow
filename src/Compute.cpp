@@ -216,12 +216,12 @@ void compute_cpp(ImageView<rgb8> in)
 
   // Image<rgb8> copy = img.clone();
   background_estimation_process(in);
-  morphologicalOpening(in, 3);
+  //morphologicalOpening(in, 3);
 
   //in = HysteresisThreshold(in);
-  ImageView<rgb8> mask = HysteresisThreshold(in);
+  //ImageView<rgb8> mask = HysteresisThreshold(in);
 
-  in = applyRedMask(in, mask, initialPixels);
+  //in = applyRedMask(in, mask, initialPixels);
 }
 
 extern "C" {
