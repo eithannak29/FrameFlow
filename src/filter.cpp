@@ -82,7 +82,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
 
 // Apply morphological threshold
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 15; 
+  const int lowThreshold = 25; 
   const int highThreshold = 50;
 
   std::queue<std::pair<int, int>> edgeQueue;

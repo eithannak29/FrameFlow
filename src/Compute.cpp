@@ -106,7 +106,7 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
 
 void background_estimation_process(ImageView<rgb8> in)
 {
-    const double distanceMultiplier = 2.8;
+    const double distanceMultiplier = 1.8;
 
     for (int y = 0; y < in.height; ++y)
     {
