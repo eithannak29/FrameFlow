@@ -272,7 +272,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
                     rgb8* neighborPixel = (rgb8*)((std::byte*)in.buffer + neighborY * in.stride);
                     int neighborIntensity = neighborPixel[neighborX].r;
                     if (neighborIntensity >= lowThreshold && neighborIntensity < highThreshold && neighborPixel[neighborX].r != 255) {
-                        neighborPixel[neighborX] = {255, 255, 255};
+                        neighborPixel[neighborX] = {0, 0, 0};
                         *hasChanged = true;
                     }
                 }
