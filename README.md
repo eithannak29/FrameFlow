@@ -1,5 +1,7 @@
 # FrameFlow Video Processing
 
+[![C++](https://img.shields.io/badge/language-C%2B%2B-blue)](https://isocpp.org/) [![CUDA](https://img.shields.io/badge/GPU-CUDA-green)](https://developer.nvidia.com/cuda-zone)
+
 This project is a video processing application that uses CUDA to perform frame-by-frame processing on a video file. The application reads a video file, processes each frame, and writes the processed frames to an output video file.
 
 <div align="center">
@@ -145,4 +147,3 @@ Edit your CUDA/C++ code in `*/Compute.*` to make modifications to the main proce
 
 - The project defaults to GPU mode, but you can switch to CPU by modifying the `mode` variable in the Makefile or when running the executable.
 - Ensure the `output` directory exists or let the Makefile create it for you.
-
