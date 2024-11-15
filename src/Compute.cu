@@ -35,7 +35,7 @@ __device__ double sRGBToLinear_cuda(double c) {
         return pow((c + 0.055) / 1.055, 2.4);
 }
 
-//------RGB/Lab conversion functions------
+//------RGB/Lab conversion functions (values from OpenCV library)------
 
 // Function for XYZ to Lab conversion
 __device__ double f_xyz_to_lab_cuda(double t) {
@@ -98,6 +98,8 @@ __device__ double deltaE_cuda(const Lab& lab1, const Lab& lab2) {
 
 //--------CUDA Kernel Functions--------
 
+
+// Function to estimate the background
 __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> device_background, ImageView<rgb8> device_candidate, ImageView<uint8_t> pixel_time_counter)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -154,6 +156,8 @@ __device__ double background_estimation(ImageView<rgb8> in, ImageView<rgb8> devi
 
     return distance;
 }
+
+// Function to perform morphological operations
 __device__ void morphological(
     ImageView<rgb8> in,
     ImageView<rgb8> copy,
@@ -177,10 +181,10 @@ __device__ void morphological(
 
                     rgb8* kernel_pixel = (rgb8*)((std::byte*)in.buffer + ny * in.stride);
                     if (erode) {
-                        new_value = myMinCuda(new_value, static_cast<uint8_t>(kernel_pixel[nx].r * 0.8));
+                        new_value = myMinCuda(new_value, static_cast<uint8_t>(kernel_pixel[nx].r));
                     }
                     else {
-                        new_value = myMaxCuda(new_value, static_cast<uint8_t>(kernel_pixel[nx].r * 0.8));
+                        new_value = myMaxCuda(new_value, static_cast<uint8_t>(kernel_pixel[nx].r));
                     }
                 }
             }
@@ -189,6 +193,8 @@ __device__ void morphological(
     }
 }
 
+
+// Function to perform morphological opening
 __global__ void morphologicalOpening(
     ImageView<rgb8> in,
     ImageView<rgb8> copy,
@@ -257,6 +263,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
     }
 }
 
+// Function to perform hysteresis thresholding
 __global__ void hysteresis(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
     hysteresis_threshold_process(in, lowThreshold, highThreshold);
 
@@ -281,6 +288,7 @@ __global__ void hysteresis(ImageView<rgb8> in, int lowThreshold, int highThresho
     }
 }
 
+
 __global__ void background_estimation_process(
     ImageView<rgb8> in,
     ImageView<rgb8> device_background,
@@ -303,6 +311,7 @@ __global__ void background_estimation_process(
     pixel_copy[x].r = static_cast<uint8_t>(myMinCuda(255.0, distance * distanceMultiplier));
 }
 
+// 
 __global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8> initialPixels){
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -327,6 +336,9 @@ __global__ void applyRedMask_cuda(ImageView<rgb8> in, ImageView<rgb8> initialPix
 
 void compute_cu(ImageView<rgb8> in)
 {
+
+    //---Initialization---
+
     static Image<uint8_t> device_logo;
     static Image<uint8_t> pixel_time_counter;
     static Image<rgb8> device_background;
@@ -362,6 +374,8 @@ void compute_cu(ImageView<rgb8> in)
     Image<rgb8> copy(in.width, in.height, true);
     cudaMemcpy2D(copy.buffer, copy.stride, in.buffer, in.stride, in.width * sizeof(rgb8), in.height, cudaMemcpyDeviceToDevice);
 
+    //---Disk kernel---
+
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 2;
     int radius = (min_dimension / 100) / ratio_disk;
@@ -388,17 +402,17 @@ l
 
     delete[] h_diskKernel;
 
+    //---Background estimation---
+
     background_estimation_process<<<grid, block>>>(
         device_in,
         device_background,
         device_candidate,
-        pixel_time_counter,
-        copy,
-        d_diskKernel,
-        radius,
-        diameter);
+        pixel_time_counter);
 
     cudaDeviceSynchronize();
+
+    //---Morphological opening---
 
     morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, true);
     cudaDeviceSynchronize();
@@ -406,9 +420,12 @@ l
     morphologicalOpening<<<grid, block>>>(device_in, copy, d_diskKernel, radius, diameter, false);
     cudaDeviceSynchronize();
 
+    //---Hysteresis thresholding---
 
     hysteresis<<<grid, block>>>(device_in, 15, 30);
     cudaDeviceSynchronize();
+
+    //---Red mask---
 
     applyRedMask_cuda<<<grid, block>>>(device_in, Initialcopy);
     cudaDeviceSynchronize();
