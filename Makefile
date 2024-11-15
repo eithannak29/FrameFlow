@@ -6,7 +6,7 @@ outputfile_cpu := $(outputdir)/cpu.mp4
 outputfile_gpu := $(outputdir)/gpu.mp4
 mode := gpu #cpu #gpu
 build_type := Debug
-default_video := samples/water_space.mp4
+default_video := samples/ACET.mp4
 
 # Target to configure the project with CMake
 .PHONY: configure

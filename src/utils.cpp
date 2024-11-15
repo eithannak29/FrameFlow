@@ -6,23 +6,6 @@
 
 #define SQR(x) ((x)*(x))
 
-//-------Progress bar-------
-
-void show_progress(int current, int total) {
-    int barWidth = 50;
-    float progress = (float)current / total;
-
-    std::cout << "[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-    std::cout << "] " << int(progress * 100.0) << " %\r";
-    std::cout.flush();
-}
-
 //------RGB/Lab conversion functions (values from OpenCV library)------
 
 double sRGBToLinear(double c) {

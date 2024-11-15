@@ -10,13 +10,6 @@ struct Lab {
     double b;
 };
 
-// Variables globales
-// extern ImageView<rgb8> bg_value;
-// extern ImageView<rgb8> candidate_value;
-// extern int time_since_match;
-// extern bool initialized;
-
-void show_progress(int current, int total);
 double sRGBToLinear(double c);
 double f_xyz_to_lab(double t);
 void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z);

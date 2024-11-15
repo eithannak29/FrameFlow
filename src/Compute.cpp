@@ -30,6 +30,23 @@ bool initialized = false;
 const int FRAMES = 268; //268 380 580;
 double total_time_elapsed = 0.0; 
 
+//-------Progress bar-------
+
+void show_progress(int current, int total) {
+    int barWidth = 50;
+    float progress = (float)current / total;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
 //--------CPP Functions--------
 
 double background_estimation(ImageView<rgb8> in, int x, int y)
