@@ -282,7 +282,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
                 }
             }
         }
-        if (nb_neighbors < 3) {
+        if (nb_neighbors < 4) {
             pixel[x] = {0, 0, 0};
             *hasChanged = true;
         }
