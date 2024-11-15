@@ -293,7 +293,8 @@ __global__ void background_estimation_process(
     ImageView<rgb8> in,
     ImageView<rgb8> device_background,
     ImageView<rgb8> device_candidate,
-    ImageView<uint8_t> pixel_time_counter
+    ImageView<uint8_t> pixel_time_counter,
+    ImageView<rgb8> copy
     ) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -395,7 +396,7 @@ void compute_cu(ImageView<rgb8> in)
             }
         }
     }
-l
+    
     int* d_diskKernel;
     cudaMalloc(&d_diskKernel, kernel_size * sizeof(int));
     cudaMemcpy(d_diskKernel, h_diskKernel, kernel_size * sizeof(int), cudaMemcpyHostToDevice);
@@ -408,7 +409,8 @@ l
         device_in,
         device_background,
         device_candidate,
-        pixel_time_counter);
+        pixel_time_counter,
+        copy);
 
     cudaDeviceSynchronize();
 
