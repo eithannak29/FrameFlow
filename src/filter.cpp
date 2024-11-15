@@ -6,15 +6,23 @@
 #include <algorithm>
 #include <queue>
 
-std::vector<std::vector<int>> createDiskKernel(int radius) {
-    int diameter = 2 * radius + 1;
-    std::vector<std::vector<int>> kernel(diameter, std::vector<int>(diameter, 0));
+std::vector<std::vector<int>> createDiskKernel() {
+    int min_dimension = std::min(in.width, in.height);
+    int ratio_disk = 2;
+    int radius = (min_dimension / 100) / ratio_disk;
     int center = radius;
-    
+    int diameter = 2 * radius + 1;
+
+    std::vector<std::vector<int>> kernel(diameter, std::vector<int>(diameter, 0));
+
     for (int i = 0; i < diameter; ++i) {
         for (int j = 0; j < diameter; ++j) {
             if (std::sqrt((i - center) * (i - center) + (j - center) * (j - center)) <= radius) {
                 kernel[i][j] = 1;
+            }
+            else
+            {
+                kernel[i][j] = 0;
             }
         }
     }
@@ -64,10 +72,7 @@ void morphological(ImageView<rgb8> in, const std::vector<std::vector<int>>& kern
 
 // Apply morphological opening (erode + dilate)
 void morphologicalOpening(ImageView<rgb8> in, int minradius) {
-    int min_dimension = std::min(in.width, in.height);
-    int ratio_disk = 1;
-    int radius = std::max(minradius, (min_dimension / 100) * ratio_disk);
-    auto diskKernel = createDiskKernel(radius);
+    auto diskKernel = createDiskKernel();
     
     // Erosion
     morphological(in, diskKernel, radius, true);
@@ -77,8 +82,8 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
 
 // Apply morphological threshold
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in) {
-  const int lowThreshold = 10; 
-  const int highThreshold = 100;
+  const int lowThreshold = 15; 
+  const int highThreshold = 50;
 
   std::queue<std::pair<int, int>> edgeQueue;
 
