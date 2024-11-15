@@ -276,7 +276,7 @@ __device__ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highTh
                         neighborPixel[neighborX] = {255, 255, 255};
                         *hasChanged = true;
                     }
-                    if (neighborIntensity >= lowTreshold) {
+                    if (neighborIntensity >= lowThreshold) {
                         nb_neighbors++;
                     }
                 }
