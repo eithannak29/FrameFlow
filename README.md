@@ -1,6 +1,12 @@
-# FrameFlow
+# FrameFlow Project README
 
 ## Prerequisites
+
+### Minimum Requirements
+- CMake version 3.15 or higher
+- CUDA Toolkit version 10.2 or higher (for GPU mode)
+- GCC version 8.0 or higher
+- Nix (if using Nix on OpenStack)
 
 If you're using Nix on OpenStack, use the provided flake to set up your environment:
 
@@ -113,23 +119,24 @@ Edit your CUDA/C++ code in `*/Compute.*` to make modifications to the main proce
 
 1. Configure the project:
 
-    ```sh
-    make configure
-    ```
+   ```sh
+   make configure
+   ```
 
 2. Build the project:
 
-    ```sh
-    make build
-    ```
+   ```sh
+   make build
+   ```
 
 3. Run the project:
 
-    ```sh
-    make run
-    ```
+   ```sh
+   make run
+   ```
 
 ## Notes
+
 - The project defaults to GPU mode, but you can switch to CPU by modifying the `mode` variable in the Makefile or when running the executable.
 - Ensure the `output` directory exists or let the Makefile create it for you.
 
