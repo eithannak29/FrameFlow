@@ -403,8 +403,8 @@ void compute_cu(ImageView<rgb8> in)
     // Compute the radius for the kernel
     int min_dimension = std::min(in.width, in.height);
     int ratio_disk = 2; // 1% of the smallest dimension
-    int minradius = 3;
-    int radius = std::max(minradius, (min_dimension / 100) / ratio_disk);
+    //int minradius = 3;
+    int radius = (min_dimension / 100) / ratio_disk;
 
     // Create the disk kernel on the host
     int diameter = 2 * radius + 1;
@@ -423,11 +423,11 @@ void compute_cu(ImageView<rgb8> in)
         }
     }
 
-    std::cout << "kernel_size: " << kernel_size << std::endl;
-    for (int i = 0; i < kernel_size; i++) {
-        std::cout << h_diskKernel[i] << "(" << i << ") ";
-    }
-    std::cout << std::endl;
+    // std::cout << "kernel_size: " << kernel_size << std::endl;
+    // for (int i = 0; i < kernel_size; i++) {
+    //     std::cout << h_diskKernel[i] << "(" << i << ") ";
+    // }
+    // std::cout << std::endl;
 
     // Allocate device memory for the kernel
     int* d_diskKernel;
