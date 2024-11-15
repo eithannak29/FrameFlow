@@ -80,7 +80,7 @@ void morphologicalOpening(ImageView<rgb8> in, int minradius) {
     morphological(in, diskKernel, radius, false);
 }
 
-void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
+void hysteresis_threshold_process_cpp(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
   for (int y = 0; y < in.height; y++) {
     for (int x = 0; x < in.width; x++) {
       int index = y * in.width + x;
@@ -98,7 +98,7 @@ void hysteresis_threshold_process(ImageView<rgb8> in, int lowThreshold, int high
   }
 }
 
-void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
+void propagate_edges_cpp(ImageView<rgb8> in, int lowThreshold, int highThreshold, bool* hasChanged) {
   for (int y = 0; y < in.height; y++) {
       for (int x = 0; x < in.width; x++) {
 
@@ -139,12 +139,12 @@ void propagate_edges(ImageView<rgb8> in, int lowThreshold, int highThreshold, bo
 }
 
 ImageView<rgb8> HysteresisThreshold(ImageView<rgb8> in, int lowThreshold, int highThreshold) {
-    hysteresis_threshold_process(in, lowThreshold, highThreshold);
+    hysteresis_threshold_process_cpp(in, lowThreshold, highThreshold);
 
     bool updated;
     do {
         updated = false;
-        propagate_edges(in, lowThreshold, highThreshold, &updated);
+        propagate_edges_cpp(in, lowThreshold, highThreshold, &updated);
     } while (updated);
 
     // int x = blockIdx.x * blockDim.x + threadIdx.x;
