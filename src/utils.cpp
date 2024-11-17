@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+
 #include "Image.hpp"
 
 // Convert a value between 0 and 1 to an RGB color (heatmap)

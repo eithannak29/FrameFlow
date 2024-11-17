@@ -1,9 +1,9 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include "Image.hpp"
 #include <vector>
 
+#include "Image.hpp"
 
 // Structure pour représenter une couleur en espace Lab
 struct Lab
@@ -25,6 +25,7 @@ double deltaE(const Lab& lab1, const Lab& lab2);
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
              double adaptationRate);
+
 template <class T>
 std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height);
 
