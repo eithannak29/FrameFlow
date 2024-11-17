@@ -26,11 +26,12 @@ Lab rgbToLab(const rgb8& rgb);
 double deltaE(const Lab& lab1, const Lab& lab2);
 
 // Fonctions pour le traitement d'images
-void init_background_model(ImageView<rgb8> in);
 ImageView<rgb8> applyFilter(ImageView<rgb8> in);
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
              double adaptationRate);
+template <class T>
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height);
 
 // Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte
 // thermique)

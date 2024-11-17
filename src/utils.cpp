@@ -7,25 +7,7 @@
 
 #define SQR(x) ((x) * (x))
 
-void init_background_model(ImageView<rgb8> in)
-{
-    bg_value = ImageView<rgb8>{ new rgb8[in.width * in.height], in.width,
-                                in.height, in.stride };
-    candidate_value = ImageView<rgb8>{ new rgb8[in.width * in.height], in.width,
-                                       in.height, in.stride };
-    for (int y = 0; y < in.height; y++)
-    {
-        for (int x = 0; x < in.width; x++)
-        {
-            int index = y * in.width + x;
-            bg_value.buffer[index] = in.buffer[index];
-            candidate_value.buffer[index] = in.buffer[index];
-        }
-    }
-    time_since_match = 0;
-}
-
-// Fonction pour convertir sRGB en RGB linéaire
+// Convert a value between 0 and 1 to an RGB color (heatmap)
 double sRGBToLinear(double c)
 {
     if (c <= 0.04045)
@@ -34,7 +16,7 @@ double sRGBToLinear(double c)
         return std::pow((c + 0.055) / 1.055, 2.4);
 }
 
-// Fonction auxiliaire pour la conversion XYZ -> Lab
+// Convert XYZ to Lab
 double f_xyz_to_lab(double t)
 {
     const double epsilon = 0.008856; // (6/29)^3
@@ -46,7 +28,7 @@ double f_xyz_to_lab(double t)
         return (kappa * t + 16.0) / 116.0;
 }
 
-// Fonction pour convertir RGB en XYZ
+// Convert RGB to XYZ
 void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z)
 {
     // Normalisation des valeurs RGB entre 0 et 1
@@ -60,7 +42,7 @@ void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z)
     Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
 }
 
-// Fonction pour convertir XYZ en Lab
+// Convert XYZ to Lab
 Lab xyzToLab(double X, double Y, double Z)
 {
     // Blanc de référence D65
@@ -86,7 +68,7 @@ Lab xyzToLab(double X, double Y, double Z)
     return lab;
 }
 
-// Fonction pour convertir RGB en Lab
+// Convert RGB to Lab
 Lab rgbToLab(const rgb8& rgb)
 {
     double X, Y, Z;
@@ -94,7 +76,7 @@ Lab rgbToLab(const rgb8& rgb)
     return xyzToLab(X, Y, Z);
 }
 
-// Fonction pour calculer la distance ΔE (CIE76) entre deux couleurs Lab
+// Calculate the CIE76 ΔE distance between two Lab colors
 double deltaE(const Lab& lab1, const Lab& lab2)
 {
     double dL = lab1.L - lab2.L;
@@ -149,8 +131,7 @@ ImageView<rgb8> applyFilter(ImageView<rgb8> in)
     return in;
 }
 
-// Fonction optimisée pour calculer la distance moyenne en utilisant la distance
-// Lab
+// Compare two images in Lab color space
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2)
 {
     if (img1.width != img2.width || img1.height != img2.height)
@@ -191,6 +172,7 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2)
     return averageDistance;
 }
 
+// Average two images with a given adaptation rate
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
              double adaptationRate)
 {
@@ -210,4 +192,15 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
                                      + img2.buffer[index].b * adaptationRate);
         }
     }
+}
+
+template <class T>
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height)
+{
+    int totalSize = width * height; // Nombre total de pixels
+    std::vector<T> pixelArray(
+        totalSize); // Création du tableau avec la taille appropriée
+    std::copy(sourceBuffer, sourceBuffer + totalSize,
+              pixelArray.begin()); // Copie des pixels
+    return pixelArray;
 }
