@@ -2,6 +2,8 @@
 #define UTILS_HPP
 
 #include "Image.hpp"
+#include <vector>
+
 
 // Structure pour représenter une couleur en espace Lab
 struct Lab
