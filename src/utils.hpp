@@ -1,5 +1,5 @@
-#ifndef COMPUTE_UTILS_HPP
-#define COMPUTE_UTILS_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include "Image.hpp"
 
@@ -36,4 +36,4 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
 // thermique)
 rgb8 mapToHeatmap(double value);
 
-#endif // COMPUTE_UTILS_UTILS_HPP
+#endif // utils_UTILS_HPP
