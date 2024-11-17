@@ -146,13 +146,3 @@ void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
     }
 }
 
-template <class T>
-std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height)
-{
-    int totalSize = width * height; // Nombre total de pixels
-    std::vector<T> pixelArray(
-        totalSize); // Création du tableau avec la taille appropriée
-    std::copy(sourceBuffer, sourceBuffer + totalSize,
-              pixelArray.begin()); // Copie des pixels
-    return pixelArray;
-}

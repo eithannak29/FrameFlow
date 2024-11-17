@@ -26,9 +26,6 @@ double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
              double adaptationRate);
 
-template <class T>
-std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height);
-
 // Fonction pour mapper une valeur entre 0 et 1 à une couleur RGB (carte
 // thermique)
 rgb8 mapToHeatmap(double value);

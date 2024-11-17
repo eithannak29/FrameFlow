@@ -26,6 +26,17 @@ ImageView<uint8_t> time_since_match;
 bool initialized = false;
 double total_time_elapsed = 0.0;
 
+template <class T>
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height)
+{
+    int totalSize = width * height; // Nombre total de pixels
+    std::vector<T> pixelArray(
+        totalSize); // Création du tableau avec la taille appropriée
+    std::copy(sourceBuffer, sourceBuffer + totalSize,
+              pixelArray.begin()); // Copie des pixels
+    return pixelArray;
+}
+
 ImageView<rgb8> applyFilter(ImageView<rgb8> in)
 {
     const double adaptationRate = 0.05;
