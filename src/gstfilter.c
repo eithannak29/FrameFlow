@@ -259,7 +259,7 @@ gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
 }
 */
 
-static clock_t start = clock();
+static clock_t start = 0;
 static int current_frame = 0;
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
