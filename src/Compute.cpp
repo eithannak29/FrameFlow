@@ -1,17 +1,17 @@
 #include "Compute.hpp"
-#include "filter.hpp"
-#include "Image.hpp"
-#include "logo.h"
 
 #include <chrono>
 #include <cmath>
-#include <thread>
 #include <iostream>
+#include <thread>
 #include <vector>
-#include <chrono>
 
+#include "Image.hpp"
+#include "filter.hpp"
+#include "logo.h"
 
-struct Lab{
+struct Lab
+{
     double L;
     double a;
     double b;
@@ -21,21 +21,20 @@ struct Lab{
 /// This function is called by cpt_process_frame for each frame
 void compute_cpp(ImageView<rgb8> in);
 
-
 /// Your CUDA version of the algorithm
 /// This function is called by cpt_process_frame for each frame
 void compute_cu(ImageView<rgb8> in);
-
 
 Image<rgb8> bg_value;
 Image<rgb8> candidate_value;
 ImageView<uint8_t> time_since_match;
 
 bool initialized = false;
-const int FRAMES = 268; //268 380 580;
-double total_time_elapsed = 0.0; 
+const int FRAMES = 268; // 268 380 580;
+double total_time_elapsed = 0.0;
 
-double sRGBToLinear(double c) {
+double sRGBToLinear(double c)
+{
     if (c <= 0.04045)
         return c / 12.92;
     else
@@ -43,9 +42,10 @@ double sRGBToLinear(double c) {
 }
 
 // Fonction auxiliaire pour la conversion XYZ -> Lab
-double f_xyz_to_lab(double t) {
+double f_xyz_to_lab(double t)
+{
     const double epsilon = 0.008856; // (6/29)^3
-    const double kappa = 903.3;      // (29/3)^3
+    const double kappa = 903.3; // (29/3)^3
 
     if (t > epsilon)
         return std::cbrt(t); // Racine cubique
@@ -54,7 +54,8 @@ double f_xyz_to_lab(double t) {
 }
 
 // Fonction pour convertir RGB en XYZ
-void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z) {
+void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z)
+{
     // Normalisation des valeurs RGB entre 0 et 1
     double r = sRGBToLinear(rgb.r / 255.0);
     double g = sRGBToLinear(rgb.g / 255.0);
@@ -66,7 +67,8 @@ void rgbToXyz(const rgb8& rgb, double& X, double& Y, double& Z) {
     Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
 }
 // Fonction pour convertir XYZ en Lab
-Lab xyzToLab(double X, double Y, double Z) {
+Lab xyzToLab(double X, double Y, double Z)
+{
     // Blanc de référence D65
     const double Xr = 0.95047;
     const double Yr = 1.00000;
@@ -91,37 +93,42 @@ Lab xyzToLab(double X, double Y, double Z) {
 }
 
 // Fonction pour convertir RGB en Lab
-Lab rgbToLab(const rgb8& rgb) {
+Lab rgbToLab(const rgb8& rgb)
+{
     double X, Y, Z;
     rgbToXyz(rgb, X, Y, Z);
     return xyzToLab(X, Y, Z);
 }
 
 // Fonction pour calculer la distance ΔE (CIE76) entre deux couleurs Lab
-double deltaE(const Lab& lab1, const Lab& lab2) {
+double deltaE(const Lab& lab1, const Lab& lab2)
+{
     double dL = lab1.L - lab2.L;
     double da = lab1.a - lab2.a;
     double db = lab1.b - lab2.b;
     return std::sqrt(dL * dL + da * da + db * db);
 }
 
-
 double background_estimation(ImageView<rgb8> in, int x, int y)
 {
-    //rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-
+    // rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
 
     rgb8* bg_pixel = (rgb8*)((std::byte*)bg_value.buffer + y * bg_value.stride);
-    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer + y * candidate_value.stride);
+    rgb8* candidate_pixel = (rgb8*)((std::byte*)candidate_value.buffer
+                                    + y * candidate_value.stride);
 
     // Moyenne locale sur les pixels voisins pour une estimation plus stable
     int sumR = 0, sumG = 0, sumB = 0, count = 0;
-    for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
+    for (int dy = -1; dy <= 1; ++dy)
+    {
+        for (int dx = -1; dx <= 1; ++dx)
+        {
             int nx = x + dx;
             int ny = y + dy;
-            if (nx >= 0 && nx < in.width && ny >= 0 && ny < in.height) {
-                rgb8 neighbor_pixel = *((rgb8*)((std::byte*)in.buffer + ny * in.stride) + nx);
+            if (nx >= 0 && nx < in.width && ny >= 0 && ny < in.height)
+            {
+                rgb8 neighbor_pixel =
+                    *((rgb8*)((std::byte*)in.buffer + ny * in.stride) + nx);
                 sumR += neighbor_pixel.r;
                 sumG += neighbor_pixel.g;
                 sumB += neighbor_pixel.b;
@@ -129,36 +136,48 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
             }
         }
     }
-    rgb8 mean_pixel = {static_cast<uint8_t>(sumR / count),
-                       static_cast<uint8_t>(sumG / count),
-                       static_cast<uint8_t>(sumB / count)};
+    rgb8 mean_pixel = { static_cast<uint8_t>(sumR / count),
+                        static_cast<uint8_t>(sumG / count),
+                        static_cast<uint8_t>(sumB / count) };
 
     // Calcul de la distance ΔE entre le pixel de fond et la moyenne locale
     double distance = deltaE(rgbToLab(mean_pixel), rgbToLab(bg_pixel[x]));
     bool match = distance < 5;
 
-    uint8_t *time = (uint8_t*)((std::byte*)time_since_match.buffer + y * time_since_match.stride);
+    uint8_t* time = (uint8_t*)((std::byte*)time_since_match.buffer
+                               + y * time_since_match.stride);
 
-    if (!match) {
-        if (time[x] == 0) {
+    if (!match)
+    {
+        if (time[x] == 0)
+        {
             candidate_pixel[x] = mean_pixel;
             time[x] += 1;
-        } else if (time[x] < 100) {
+        }
+        else if (time[x] < 100)
+        {
             candidate_pixel[x].r = (candidate_pixel[x].r + mean_pixel.r) / 2;
             candidate_pixel[x].g = (candidate_pixel[x].g + mean_pixel.g) / 2;
             candidate_pixel[x].b = (candidate_pixel[x].b + mean_pixel.b) / 2;
             time[x] += 1;
-        } else {
+        }
+        else
+        {
             std::swap(bg_pixel[x].r, candidate_pixel[x].r);
             std::swap(bg_pixel[x].g, candidate_pixel[x].g);
             std::swap(bg_pixel[x].b, candidate_pixel[x].b);
             time[x] = 0;
         }
-    } else {
+    }
+    else
+    {
         // Mise à jour progressive du fond avec interpolation pour un lissage
-        bg_pixel[x].r = static_cast<uint8_t>(bg_pixel[x].r * 0.9 + mean_pixel.r * 0.1);
-        bg_pixel[x].g = static_cast<uint8_t>(bg_pixel[x].g * 0.9 + mean_pixel.g * 0.1);
-        bg_pixel[x].b = static_cast<uint8_t>(bg_pixel[x].b * 0.9 + mean_pixel.b * 0.1);
+        bg_pixel[x].r =
+            static_cast<uint8_t>(bg_pixel[x].r * 0.9 + mean_pixel.r * 0.1);
+        bg_pixel[x].g =
+            static_cast<uint8_t>(bg_pixel[x].g * 0.9 + mean_pixel.g * 0.1);
+        bg_pixel[x].b =
+            static_cast<uint8_t>(bg_pixel[x].b * 0.9 + mean_pixel.b * 0.1);
         time[x] = 0;
     }
 
@@ -167,7 +186,7 @@ double background_estimation(ImageView<rgb8> in, int x, int y)
 
 void background_estimation_process(ImageView<rgb8> in)
 {
- //   const double treshold = 25;
+    //   const double treshold = 25;
 
     const double distanceMultiplier = 2.8;
 
@@ -179,80 +198,89 @@ void background_estimation_process(ImageView<rgb8> in)
             double distance = background_estimation(in, x, y);
             // std::cout << "aled++" << std::endl;
             rgb8* pixel = (rgb8*)((std::byte*)in.buffer + y * in.stride);
-             
-            pixel[x].r = static_cast<uint8_t>(std::min(255.0, distance * distanceMultiplier));
+
+            pixel[x].r = static_cast<uint8_t>(
+                std::min(255.0, distance * distanceMultiplier));
         }
     }
 }
 
 template <class T>
-std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height) {
+std::vector<T> saveInitialBuffer(const T* sourceBuffer, int width, int height)
+{
     int totalSize = width * height; // Nombre total de pixels
-    std::vector<T> pixelArray(totalSize); // Création du tableau avec la taille appropriée
-    std::copy(sourceBuffer, sourceBuffer + totalSize, pixelArray.begin()); // Copie des pixels
+    std::vector<T> pixelArray(
+        totalSize); // Création du tableau avec la taille appropriée
+    std::copy(sourceBuffer, sourceBuffer + totalSize,
+              pixelArray.begin()); // Copie des pixels
     return pixelArray;
 }
 
 /// CPU Single threaded version of the Method
 void compute_cpp(ImageView<rgb8> in)
 {
+    Image<rgb8> img = Image<rgb8>();
+    img.buffer = in.buffer;
+    img.width = in.width;
+    img.height = in.height;
+    img.stride = in.stride;
+    if (!initialized)
+    {
+        initialized = true;
+        bg_value = img.clone();
+        candidate_value = img.clone();
+        // init_background_model(in);
+        uint8_t* buffer =
+            (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
+        time_since_match =
+            ImageView<uint8_t>{ buffer, in.width, in.height, in.width };
+    }
 
-  Image<rgb8> img = Image<rgb8>();
-  img.buffer = in.buffer;
-  img.width = in.width;
-  img.height = in.height;
-  img.stride = in.stride;
-  if (!initialized)
-  {
-      initialized = true;
-      bg_value = img.clone();
-      candidate_value = img.clone();
-      // init_background_model(in);
-      uint8_t* buffer = (uint8_t*)calloc(in.width * in.height, sizeof(uint8_t));
-      time_since_match = ImageView<uint8_t>{buffer, in.width, in.height, in.width};
-  }
+    std::vector<rgb8> initialPixels =
+        saveInitialBuffer(in.buffer, in.width, in.height);
 
-   std::vector<rgb8> initialPixels = saveInitialBuffer(in.buffer, in.width, in.height);
+    // Image<rgb8> copy = img.clone();
+    background_estimation_process(in);
+    // morphologicalOpening(in, 3);
 
-  // Image<rgb8> copy = img.clone();
-  background_estimation_process(in);
-  //morphologicalOpening(in, 3);
+    // in = HysteresisThreshold(in);
+    // ImageView<rgb8> mask = HysteresisThreshold(in);
 
-  //in = HysteresisThreshold(in);
-  //ImageView<rgb8> mask = HysteresisThreshold(in);
-
-  //in = applyRedMask(in, mask, initialPixels);
+    // in = applyRedMask(in, mask, initialPixels);
 }
 
-extern "C" {
+extern "C"
+{
+    static Parameters g_params;
 
-  static Parameters g_params;
+    static int frame_counter_bench = 0;
 
-  static int frame_counter_bench = 0;
-
-  void cpt_init(Parameters* params)
-  {
-    g_params = *params;
-  }
-
-  void cpt_process_frame(uint8_t* buffer, int width, int height, int stride)
-  {
-    auto img = ImageView<rgb8>{(rgb8*)buffer, width, height, stride};
-    auto start = std::chrono::high_resolution_clock::now();
-
-    if (g_params.device == e_device_t::CPU)
-      compute_cpp(img);
-    else if (g_params.device == e_device_t::GPU)
-      compute_cu(img);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    total_time_elapsed += elapsed.count();
-    frame_counter_bench++;
-
-    if (frame_counter_bench == FRAMES) {
-      std::string device_type = (g_params.device == e_device_t::CPU) ? "CPU" : "GPU";
-      std::cout << "Total time " << device_type << ": " << total_time_elapsed << "s" << std::endl;
+    void cpt_init(Parameters* params)
+    {
+        g_params = *params;
     }
-  }
+
+    void cpt_process_frame(uint8_t* buffer, int width, int height, int stride)
+    {
+        auto img = ImageView<rgb8>{ (rgb8*)buffer, width, height, stride };
+        auto start = std::chrono::high_resolution_clock::now();
+
+        if (g_params.device == e_device_t::CPU)
+            compute_cpp(img);
+        else if (g_params.device == e_device_t::GPU)
+            compute_cu(img);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        total_time_elapsed += elapsed.count();
+        frame_counter_bench++;
+
+        if (frame_counter_bench == FRAMES)
+        {
+            std::string device_type =
+                (g_params.device == e_device_t::CPU) ? "CPU" : "GPU";
+            std::cout << "Total time " << device_type << ": "
+                      << total_time_elapsed << "s" << std::endl;
+        }
+    }
 }
