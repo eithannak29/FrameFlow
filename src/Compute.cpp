@@ -238,15 +238,12 @@ void compute_cpp(ImageView<rgb8> in)
 
     std::vector<rgb8> initialPixels =
         saveInitialBuffer(in.buffer, in.width, in.height);
-
-    // Image<rgb8> copy = img.clone();
+    
     background_estimation_process(in);
-    // morphologicalOpening(in, 3);
-
-    // in = HysteresisThreshold(in);
-    // ImageView<rgb8> mask = HysteresisThreshold(in);
-
-    // in = applyRedMask(in, mask, initialPixels);
+    morphologicalOpening(in, 3);
+    in = HysteresisThreshold(in);
+    ImageView<rgb8> mask = HysteresisThreshold(in);
+    in = applyRedMask(in, mask, initialPixels);
 }
 
 extern "C"
