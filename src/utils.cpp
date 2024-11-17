@@ -2,10 +2,9 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "Image.hpp"
-
-#define SQR(x) ((x) * (x))
 
 // Convert a value between 0 and 1 to an RGB color (heatmap)
 double sRGBToLinear(double c)
@@ -83,52 +82,6 @@ double deltaE(const Lab& lab1, const Lab& lab2)
     double da = lab1.a - lab2.a;
     double db = lab1.b - lab2.b;
     return std::sqrt(dL * dL + da * da + db * db);
-}
-
-ImageView<rgb8> applyFilter(ImageView<rgb8> in)
-{
-    const double adaptationRate = 0.05;
-    for (int y = 0; y < in.height; y++)
-    {
-        for (int x = 0; x < in.width; x++)
-        {
-            int index = y * in.width + x;
-            rgb8 pixel = in.buffer[index];
-            rgb8 bg_pixel = bg_value.buffer[index];
-
-            // Calculer la distance de couleur entre le pixel et le fond
-            int dr = pixel.r - bg_pixel.r;
-            int dg = pixel.g - bg_pixel.g;
-            int db = pixel.b - bg_pixel.b;
-            double distance = std::sqrt(dr * dr + dg * dg + db * db);
-            uint8_t intensity =
-                static_cast<uint8_t>(std::min(255.0, distance * 2));
-
-            // Appliquer un effet visuel en fonction de la distance
-            if (distance < 50)
-            {
-                // Si la distance est faible, on met le pixel en fond
-                in.buffer[index] = { 0, 0, 0 };
-
-                bg_pixel.r =
-                    static_cast<uint8_t>(bg_pixel.r * (1 - adaptationRate)
-                                         + pixel.r * adaptationRate);
-                bg_pixel.g =
-                    static_cast<uint8_t>(bg_pixel.g * (1 - adaptationRate)
-                                         + pixel.g * adaptationRate);
-                bg_pixel.b =
-                    static_cast<uint8_t>(bg_pixel.b * (1 - adaptationRate)
-                                         + pixel.b * adaptationRate);
-            }
-            else
-            {
-                // Si la distance est élevée, on applique un effet de
-                // surbrillance
-                in.buffer[index] = { intensity, intensity, 0 };
-            }
-        }
-    }
-    return in;
 }
 
 // Compare two images in Lab color space

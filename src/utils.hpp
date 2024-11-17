@@ -11,12 +11,6 @@ struct Lab
     double b;
 };
 
-// Variables globales
-extern ImageView<rgb8> bg_value;
-extern ImageView<rgb8> candidate_value;
-extern int time_since_match;
-extern bool initialized;
-
 // Fonctions de conversion de couleur et de distance de couleur
 double sRGBToLinear(double c);
 double f_xyz_to_lab(double t);
@@ -26,7 +20,6 @@ Lab rgbToLab(const rgb8& rgb);
 double deltaE(const Lab& lab1, const Lab& lab2);
 
 // Fonctions pour le traitement d'images
-ImageView<rgb8> applyFilter(ImageView<rgb8> in);
 double matchImagesLab(const ImageView<rgb8>& img1, const ImageView<rgb8>& img2);
 void average(ImageView<rgb8>& img1, const ImageView<rgb8>& img2,
              double adaptationRate);
