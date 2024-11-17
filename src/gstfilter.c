@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include "gstfilter.h"
 #include "Compute.hpp"
+#include <chrono>
 
 /* properties */
 enum {
@@ -258,6 +259,7 @@ gst_myfilter_transform_frame (GstVideoFilter * filter, GstVideoFrame * inframe,
 }
 */
 
+static gstart = std::chrono::high_resolution_clock::now();
 static int current_frame = 0;
 static GstFlowReturn
 gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
@@ -283,6 +285,13 @@ gst_myfilter_transform_frame_ip (GstVideoFilter * filter, GstVideoFrame * frame)
 
   }
   printf("] %.2f%%   ", progress);
+
+  if (current_frame == total_frames) {
+      printf("\n");
+      auto end = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = end - start;
+      printf("Total time elapsed: %.2f seconds\n", elapsed.count());
+  }
 
   GstMyFilter *cudafilter = GST_MYFILTER (filter);
 
